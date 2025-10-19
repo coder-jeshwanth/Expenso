@@ -1,7 +1,7 @@
 import React from 'react';
 import { Card, CardContent, Typography, Box, useTheme } from '@mui/material';
 import { Bar } from 'react-chartjs-2';
-import { DailyExpense } from '../types';
+import { WeeklyTrend } from '../types';
 import { 
   Chart as ChartJS, 
   CategoryScale, 
@@ -22,23 +22,32 @@ ChartJS.register(
 );
 
 interface ExpenseBarChartProps {
-  dailyExpenses: DailyExpense[];
+  weeklyTrends: WeeklyTrend[];
 }
 
-const ExpenseBarChart: React.FC<ExpenseBarChartProps> = ({ dailyExpenses }) => {
+const ExpenseBarChart: React.FC<ExpenseBarChartProps> = ({ weeklyTrends }) => {
   const theme = useTheme();
   
   const chartData = {
-    labels: dailyExpenses.map(item => item.date),
+    labels: weeklyTrends.map(item => item.week),
     datasets: [
       {
-        label: 'Daily Expenses',
-        data: dailyExpenses.map(item => item.amount),
-        backgroundColor: theme.palette.primary.light,
-        borderColor: theme.palette.primary.main,
+        label: 'Expenses',
+        data: weeklyTrends.map(item => item.expenses),
+        backgroundColor: theme.palette.error.light,
+        borderColor: theme.palette.error.main,
         borderWidth: 1,
         borderRadius: 8,
-        hoverBackgroundColor: theme.palette.primary.main
+        hoverBackgroundColor: theme.palette.error.main
+      },
+      {
+        label: 'Income',
+        data: weeklyTrends.map(item => item.income),
+        backgroundColor: theme.palette.success.light,
+        borderColor: theme.palette.success.main,
+        borderWidth: 1,
+        borderRadius: 8,
+        hoverBackgroundColor: theme.palette.success.main
       },
     ],
   };
@@ -48,12 +57,18 @@ const ExpenseBarChart: React.FC<ExpenseBarChartProps> = ({ dailyExpenses }) => {
     maintainAspectRatio: false,
     plugins: {
       legend: {
-        display: false,
+        display: true,
+        position: 'top' as const,
+        labels: {
+          usePointStyle: true,
+          pointStyle: 'rect',
+          padding: 20,
+        }
       },
       tooltip: {
         callbacks: {
           label: function(context: any) {
-            return `₹${context.raw}`;
+            return `${context.dataset.label}: ₹${context.raw.toLocaleString()}`;
           }
         }
       }
@@ -67,7 +82,7 @@ const ExpenseBarChart: React.FC<ExpenseBarChartProps> = ({ dailyExpenses }) => {
         },
         ticks: {
           callback: function(value: any) {
-            return '₹' + value;
+            return '₹' + value.toLocaleString();
           }
         }
       },
@@ -91,7 +106,7 @@ const ExpenseBarChart: React.FC<ExpenseBarChartProps> = ({ dailyExpenses }) => {
     }}>
       <CardContent>
         <Typography variant="h6" sx={{ mb: 2, fontWeight: 'medium' }}>
-          Daily Expense Trend
+          Weekly Trends
         </Typography>
         
         <Box sx={{ height: 300 }}>

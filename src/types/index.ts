@@ -20,3 +20,9 @@ export interface DailyExpense {
   date: string;
   amount: number;
 }
+
+export interface WeeklyTrend {
+  week: string;
+  expenses: number;
+  income: number;
+}

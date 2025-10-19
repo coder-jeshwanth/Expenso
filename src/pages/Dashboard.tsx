@@ -21,7 +21,8 @@ const Dashboard: React.FC = () => {
     getTotalExpenses, 
     getCurrentBalance,
     getCategoryExpenses,
-    getDailyExpenses 
+    getDailyExpenses,
+    getWeeklyTrends 
   } = useTransactions();
 
   const income = getTotalIncome();
@@ -29,6 +30,7 @@ const Dashboard: React.FC = () => {
   const balance = getCurrentBalance();
   const categoryExpenses = getCategoryExpenses();
   const dailyExpenses = getDailyExpenses();
+  const weeklyTrends = getWeeklyTrends();
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -140,7 +142,7 @@ const Dashboard: React.FC = () => {
           </Box>
           <Box sx={{ flex: '1 1 500px', minWidth: 0 }}>
             <motion.div variants={itemVariants}>
-              <ExpenseBarChart dailyExpenses={dailyExpenses} />
+              <ExpenseBarChart weeklyTrends={weeklyTrends} />
             </motion.div>
           </Box>
         </Box>

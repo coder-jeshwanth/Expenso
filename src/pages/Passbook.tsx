@@ -19,6 +19,7 @@ import {
   InputLabel,
   Select,
   MenuItem,
+  Divider,
   useTheme
 } from '@mui/material';
 import {
@@ -26,8 +27,8 @@ import {
   TrendingUp as IncomeIcon,
   TrendingDown as ExpenseIcon,
   Search as SearchIcon,
-  FilterList as FilterIcon,
-  GetApp as DownloadIcon
+  GetApp as DownloadIcon,
+  ViewList as AllIcon
 } from '@mui/icons-material';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
@@ -39,7 +40,8 @@ const Passbook: React.FC = () => {
   
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState('all');
-  const [sortBy, setSortBy] = useState('date');
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -61,7 +63,7 @@ const Passbook: React.FC = () => {
     }
   };
 
-  // Filter and sort transactions
+  // Filter transactions
   const filteredTransactions = transactions
     .filter(transaction => {
       const matchesSearch = 
@@ -77,12 +79,8 @@ const Passbook: React.FC = () => {
       return matchesSearch && matchesFilter;
     })
     .sort((a, b) => {
-      if (sortBy === 'date') {
-        return new Date(b.date).getTime() - new Date(a.date).getTime();
-      } else if (sortBy === 'amount') {
-        return b.amount - a.amount;
-      }
-      return 0;
+      // Default sort by date (newest first)
+      return new Date(b.date).getTime() - new Date(a.date).getTime();
     });
 
   const formatDate = (date: Date) => {
@@ -109,6 +107,49 @@ const Passbook: React.FC = () => {
     }
     return balance;
   };
+
+  const handleTypeColumnClick = () => {
+    if (filterType === 'all') {
+      setFilterType('credit');
+    } else if (filterType === 'credit') {
+      setFilterType('debit');
+    } else {
+      setFilterType('all');
+    }
+  };
+
+  const getTypeColumnTitle = () => {
+    if (filterType === 'all') {
+      return 'Type';
+    } else if (filterType === 'credit') {
+      return 'Type (Income)';
+    } else {
+      return 'Type (Expense)';
+    }
+  };
+
+  // Pagination logic
+  const totalPages = Math.ceil(filteredTransactions.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const paginatedTransactions = filteredTransactions.slice(startIndex, endIndex);
+
+  const handleNextPage = () => {
+    if (currentPage < totalPages) {
+      setCurrentPage(currentPage + 1);
+    }
+  };
+
+  const handlePreviousPage = () => {
+    if (currentPage > 1) {
+      setCurrentPage(currentPage - 1);
+    }
+  };
+
+  // Reset to page 1 when search term or filter changes
+  React.useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, filterType]);
 
   return (
     <Container maxWidth="lg" sx={{ py: 4 }}>
@@ -143,14 +184,6 @@ const Passbook: React.FC = () => {
               >
                 <DownloadIcon />
               </IconButton>
-              <IconButton
-                sx={{ 
-                  border: `1px solid ${theme.palette.divider}`,
-                  borderRadius: 2
-                }}
-              >
-                <FilterIcon />
-              </IconButton>
             </Box>
           </Box>
         </motion.div>
@@ -171,8 +204,8 @@ const Passbook: React.FC = () => {
             <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', alignItems: 'center' }}>
               <TextField
                 label="Search transactions"
+                placeholder="Search by amount, category, notes, or source..."
                 variant="outlined"
-                size="small"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 InputProps={{
@@ -182,33 +215,27 @@ const Passbook: React.FC = () => {
                     </InputAdornment>
                   ),
                 }}
-                sx={{ minWidth: 200, flex: 1 }}
+                sx={{ 
+                  minWidth: 200, 
+                  flex: 1,
+                  '& .MuiOutlinedInput-root': {
+                    height: '56px',
+                    '&:hover fieldset': {
+                      borderColor: theme.palette.primary.main,
+                    },
+                    '&.Mui-focused fieldset': {
+                      borderColor: theme.palette.primary.main,
+                      borderWidth: 2,
+                    },
+                  },
+                  '& .MuiInputBase-input': {
+                    padding: '16px 14px',
+                  },
+                  '& .MuiInputLabel-root.Mui-focused': {
+                    color: theme.palette.primary.main,
+                  }
+                }}
               />
-              
-              <FormControl size="small" sx={{ minWidth: 120 }}>
-                <InputLabel>Type</InputLabel>
-                <Select
-                  value={filterType}
-                  label="Type"
-                  onChange={(e) => setFilterType(e.target.value)}
-                >
-                  <MenuItem value="all">All</MenuItem>
-                  <MenuItem value="credit">Income</MenuItem>
-                  <MenuItem value="debit">Expense</MenuItem>
-                </Select>
-              </FormControl>
-
-              <FormControl size="small" sx={{ minWidth: 120 }}>
-                <InputLabel>Sort by</InputLabel>
-                <Select
-                  value={sortBy}
-                  label="Sort by"
-                  onChange={(e) => setSortBy(e.target.value)}
-                >
-                  <MenuItem value="date">Date</MenuItem>
-                  <MenuItem value="amount">Amount</MenuItem>
-                </Select>
-              </FormControl>
             </Box>
           </Paper>
         </motion.div>
@@ -294,85 +321,236 @@ const Passbook: React.FC = () => {
             }}
           >
             <TableContainer>
-              <Table>
+              <Table 
+                sx={{ 
+                  minWidth: 650,
+                  tableLayout: 'fixed',
+                  '& .MuiTableCell-root': {
+                    borderBottom: `1px solid ${theme.palette.divider}`,
+                  }
+                }}
+              >
                 <TableHead>
                   <TableRow sx={{ backgroundColor: theme.palette.mode === 'dark' ? '#2a2a3e' : '#f5f5f5' }}>
-                    <TableCell><strong>Date</strong></TableCell>
-                    <TableCell><strong>Description</strong></TableCell>
-                    <TableCell><strong>Category</strong></TableCell>
-                    <TableCell align="right"><strong>Amount</strong></TableCell>
-                    <TableCell align="right"><strong>Balance</strong></TableCell>
-                    <TableCell><strong>Type</strong></TableCell>
+                    <TableCell 
+                      sx={{ 
+                        width: '120px',
+                        minWidth: '120px',
+                        fontWeight: 600,
+                        fontSize: '0.875rem',
+                        letterSpacing: '0.5px',
+                        padding: '16px 12px'
+                      }}
+                    >
+                      Date
+                    </TableCell>
+                    <TableCell 
+                      sx={{ 
+                        width: '45%',
+                        minWidth: '220px',
+                        fontWeight: 600,
+                        fontSize: '0.875rem',
+                        letterSpacing: '0.5px',
+                        padding: '16px 12px'
+                      }}
+                    >
+                      Description
+                    </TableCell>
+                    <TableCell 
+                      align="right" 
+                      sx={{ 
+                        width: '130px',
+                        minWidth: '130px',
+                        fontWeight: 600,
+                        fontSize: '0.875rem',
+                        letterSpacing: '0.5px',
+                        padding: '16px 12px'
+                      }}
+                    >
+                      Amount
+                    </TableCell>
+                    <TableCell 
+                      align="right" 
+                      sx={{ 
+                        width: '130px',
+                        minWidth: '130px',
+                        fontWeight: 600,
+                        fontSize: '0.875rem',
+                        letterSpacing: '0.5px',
+                        padding: '16px 12px'
+                      }}
+                    >
+                      Balance
+                    </TableCell>
+                    <TableCell 
+                      onClick={handleTypeColumnClick}
+                      sx={{ 
+                        width: '110px',
+                        minWidth: '110px',
+                        cursor: 'pointer',
+                        userSelect: 'none',
+                        fontWeight: 600,
+                        fontSize: '0.875rem',
+                        letterSpacing: '0.5px',
+                        padding: '16px 12px',
+                        '&:hover': {
+                          backgroundColor: theme.palette.primary.main + '15',
+                        },
+                        color: filterType !== 'all' ? theme.palette.primary.main : 'inherit',
+                        transition: 'all 0.2s ease'
+                      }}
+                    >
+                      {getTypeColumnTitle()}
+                    </TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
                   {filteredTransactions.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={6} align="center" sx={{ py: 4 }}>
+                      <TableCell colSpan={5} align="center" sx={{ py: 4 }}>
                         <Typography variant="body2" color="textSecondary">
                           No transactions found. {searchTerm && `Try adjusting your search for "${searchTerm}".`}
                         </Typography>
                       </TableCell>
                     </TableRow>
                   ) : (
-                    filteredTransactions.map((transaction, index) => (
-                      <TableRow
-                        key={transaction.id}
-                        sx={{
-                          '&:hover': {
-                            backgroundColor: theme.palette.mode === 'dark' ? '#2a2a3e20' : '#f5f5f520'
-                          }
-                        }}
-                      >
-                        <TableCell>
-                          {formatDate(transaction.date)}
-                        </TableCell>
-                        <TableCell>
-                          <Box>
-                            <Typography variant="body2" fontWeight={500}>
-                              {transaction.source || transaction.category}
+                    paginatedTransactions.map((transaction, paginatedIndex) => {
+                      const actualIndex = startIndex + paginatedIndex;
+                      return (
+                        <TableRow
+                          key={transaction.id}
+                          sx={{
+                            '&:hover': {
+                              backgroundColor: theme.palette.mode === 'dark' ? '#2a2a3e15' : '#f5f5f515'
+                            },
+                            '&:nth-of-type(even)': {
+                              backgroundColor: theme.palette.mode === 'dark' ? '#1a1a2e08' : '#f8f9fa50'
+                            }
+                          }}
+                        >
+                          <TableCell sx={{ padding: '12px', fontSize: '0.875rem' }}>
+                            <Typography variant="body2" fontWeight={400} sx={{ fontFamily: 'monospace' }}>
+                              {formatDate(transaction.date)}
                             </Typography>
-                            {transaction.notes && (
-                              <Typography variant="caption" color="textSecondary">
-                                {transaction.notes}
+                          </TableCell>
+                          <TableCell sx={{ padding: '12px' }}>
+                            <Box>
+                              <Typography variant="body2" fontWeight={500} sx={{ fontSize: '0.875rem', mb: 0.5 }}>
+                                {transaction.source || transaction.category}
                               </Typography>
-                            )}
-                          </Box>
-                        </TableCell>
-                        <TableCell>
-                          {transaction.category || transaction.source || '-'}
-                        </TableCell>
-                        <TableCell align="right">
-                          <Typography
-                            variant="body2"
-                            fontWeight={600}
-                            color={transaction.type === 'credit' ? 'success.main' : 'error.main'}
-                          >
-                            {transaction.type === 'credit' ? '+' : '-'}{formatAmount(transaction.amount)}
-                          </Typography>
-                        </TableCell>
-                        <TableCell align="right">
-                          <Typography variant="body2" fontWeight={500}>
-                            ₹{getRunningBalance(index).toLocaleString('en-IN')}
-                          </Typography>
-                        </TableCell>
-                        <TableCell>
-                          <Chip
-                            icon={transaction.type === 'credit' ? <IncomeIcon /> : <ExpenseIcon />}
-                            label={transaction.type === 'credit' ? 'Income' : 'Expense'}
-                            size="small"
-                            color={transaction.type === 'credit' ? 'success' : 'error'}
-                            variant="outlined"
-                          />
-                        </TableCell>
-                      </TableRow>
-                    ))
+                              {transaction.notes && (
+                                <Typography variant="caption" color="textSecondary" sx={{ fontSize: '0.75rem' }}>
+                                  {transaction.notes}
+                                </Typography>
+                              )}
+                            </Box>
+                          </TableCell>
+                          <TableCell align="right" sx={{ padding: '12px' }}>
+                            <Typography
+                              variant="body2"
+                              fontWeight={600}
+                              color={transaction.type === 'credit' ? 'success.main' : 'error.main'}
+                              sx={{ fontFamily: 'monospace', fontSize: '0.875rem' }}
+                            >
+                              {transaction.type === 'credit' ? '+' : '-'}{formatAmount(transaction.amount)}
+                            </Typography>
+                          </TableCell>
+                          <TableCell align="right" sx={{ padding: '12px' }}>
+                            <Typography 
+                              variant="body2" 
+                              fontWeight={500} 
+                              sx={{ fontFamily: 'monospace', fontSize: '0.875rem' }}
+                            >
+                              ₹{getRunningBalance(actualIndex).toLocaleString('en-IN')}
+                            </Typography>
+                          </TableCell>
+                          <TableCell sx={{ padding: '12px' }}>
+                            <Chip
+                              icon={transaction.type === 'credit' ? <IncomeIcon /> : <ExpenseIcon />}
+                              label={transaction.type === 'credit' ? 'Income' : 'Expense'}
+                              size="small"
+                              color={transaction.type === 'credit' ? 'success' : 'error'}
+                              variant="outlined"
+                              sx={{ 
+                                fontSize: '0.75rem', 
+                                fontWeight: 500,
+                                minWidth: '85px'
+                              }}
+                            />
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })
                   )}
                 </TableBody>
               </Table>
             </TableContainer>
           </Paper>
         </motion.div>
+
+        {/* Pagination Controls */}
+        {filteredTransactions.length > itemsPerPage && (
+          <motion.div variants={itemVariants}>
+            <Box sx={{ 
+              display: 'flex', 
+              justifyContent: 'space-between', 
+              alignItems: 'center',
+              mt: 3,
+              px: 2
+            }}>
+              <Button
+                onClick={handlePreviousPage}
+                disabled={currentPage === 1}
+                startIcon={<ArrowBackIcon />}
+                variant="outlined"
+                sx={{ 
+                  minWidth: 120,
+                  '&:disabled': {
+                    opacity: 0.5
+                  }
+                }}
+              >
+                Previous
+              </Button>
+              
+              <Box sx={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                gap: 2,
+                backgroundColor: theme.palette.background.paper,
+                px: 3,
+                py: 1,
+                borderRadius: 2,
+                border: `1px solid ${theme.palette.divider}`
+              }}>
+                <Typography variant="body2" color="text.secondary">
+                  Page
+                </Typography>
+                <Typography variant="body1" fontWeight={600} color="primary.main">
+                  {currentPage}
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  of {totalPages}
+                </Typography>
+              </Box>
+              
+              <Button
+                onClick={handleNextPage}
+                disabled={currentPage === totalPages}
+                endIcon={<ArrowBackIcon sx={{ transform: 'rotate(180deg)' }} />}
+                variant="outlined"
+                sx={{ 
+                  minWidth: 120,
+                  '&:disabled': {
+                    opacity: 0.5
+                  }
+                }}
+              >
+                Next
+              </Button>
+            </Box>
+          </motion.div>
+        )}
 
         {/* Summary Footer */}
         {filteredTransactions.length > 0 && (
@@ -389,14 +567,19 @@ const Passbook: React.FC = () => {
               }}
             >
               <Typography variant="body2" color="textSecondary">
-                Showing {filteredTransactions.length} of {transactions.length} transactions
+                Showing {startIndex + 1}-{Math.min(startIndex + itemsPerPage, filteredTransactions.length)} of {filteredTransactions.length} transactions
                 {searchTerm && ` for "${searchTerm}"`}
                 {filterType !== 'all' && ` (${filterType === 'credit' ? 'Income' : 'Expense'} only)`}
+                {filteredTransactions.length !== transactions.length && ` • Total: ${transactions.length}`}
               </Typography>
             </Paper>
           </motion.div>
         )}
       </motion.div>
+
+
+
+
     </Container>
   );
 };
