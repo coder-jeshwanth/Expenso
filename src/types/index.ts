@@ -26,3 +26,15 @@ export interface WeeklyTrend {
   expenses: number;
   income: number;
 }
+
+export interface Goal {
+  id: string;
+  name: string;
+  targetAmount: number;
+  currentAmount: number;
+  category: string;
+  description?: string;
+  targetDate?: Date;
+  createdDate: Date;
+  completed: boolean;
+}

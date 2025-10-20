@@ -97,7 +97,6 @@ const ExpenseBarChart: React.FC<ExpenseBarChartProps> = ({ weeklyTrends }) => {
 
   return (
     <Card sx={{ 
-      height: '100%',
       boxShadow: '0px 4px 12px rgba(0, 0, 0, 0.05)',
       '&:hover': {
         boxShadow: '0px 8px 16px rgba(0, 0, 0, 0.08)',

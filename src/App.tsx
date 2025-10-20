@@ -7,6 +7,7 @@ import Navigation from './components/Navigation';
 import Dashboard from './pages/Dashboard';
 import AddCredit from './pages/AddCredit';
 import AddDebit from './pages/AddDebit';
+import Goals from './pages/Goals';
 import Passbook from './pages/Passbook';
 import Settings from './pages/Settings';
 
@@ -21,6 +22,7 @@ function App() {
             <Route path="/" element={<Dashboard />} />
             <Route path="/add-credit" element={<AddCredit />} />
             <Route path="/add-debit" element={<AddDebit />} />
+            <Route path="/goals" element={<Goals />} />
             <Route path="/passbook" element={<Passbook />} />
             <Route path="/settings" element={<Settings />} />
           </Routes>

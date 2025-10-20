@@ -21,12 +21,15 @@ import {
   Add as AddIcon,
   Remove as RemoveIcon,
   AccountBalanceWallet as PassbookIcon,
-  Settings as SettingsIcon
+  Settings as SettingsIcon,
+  TrendingUp as GoalsIcon
 } from '@mui/icons-material';
 import { Link, useLocation } from 'react-router-dom';
+import { useThemeMode } from '../context/ThemeContext';
 
 const Navigation: React.FC = () => {
   const theme = useTheme();
+  const { isDarkMode } = useThemeMode();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const [drawerOpen, setDrawerOpen] = useState(false);
   const location = useLocation();
@@ -35,6 +38,7 @@ const Navigation: React.FC = () => {
     { name: 'Dashboard', path: '/', icon: <DashboardIcon /> },
     { name: 'Add Credit', path: '/add-credit', icon: <AddIcon /> },
     { name: 'Add Expense', path: '/add-debit', icon: <RemoveIcon /> },
+    { name: 'Goals', path: '/goals', icon: <GoalsIcon /> },
     { name: 'Passbook', path: '/passbook', icon: <PassbookIcon /> },
     { name: 'Settings', path: '/settings', icon: <SettingsIcon /> }
   ];
@@ -61,9 +65,14 @@ const Navigation: React.FC = () => {
       onClick={toggleDrawer(false)}
       onKeyDown={toggleDrawer(false)}
     >
-      <Box sx={{ p: 2, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <Box sx={{ p: 2, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 1 }}>
+        <img 
+          src={isDarkMode ? '/dark.png' : '/light.png'} 
+          alt="Expenso Logo" 
+          style={{ height: '40px', width: 'auto' }}
+        />
         <Typography variant="h6" sx={{ fontWeight: 'bold', color: theme.palette.primary.main }}>
-          Expenso
+          Expenzo
         </Typography>
       </Box>
       <List>
@@ -111,8 +120,23 @@ const Navigation: React.FC = () => {
             </IconButton>
           )}
           <Typography variant="h6" component="div" sx={{ flexGrow: 1, fontWeight: 'bold' }}>
-            <Box component={Link} to="/" sx={{ textDecoration: 'none', color: theme.palette.primary.main }}>
-              Expenso
+            <Box 
+              component={Link} 
+              to="/" 
+              sx={{ 
+                textDecoration: 'none', 
+                color: theme.palette.primary.main,
+                display: 'flex',
+                alignItems: 'center',
+                gap: 1
+              }}
+            >
+              <img 
+                src={isDarkMode ? '/dark.png' : '/light.png'} 
+                alt="Expenso Logo" 
+                style={{ height: '32px', width: 'auto' }}
+              />
+              Expenzo
             </Box>
           </Typography>
           

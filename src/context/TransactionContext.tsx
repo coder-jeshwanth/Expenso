@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, ReactNode } from 'react';
-import { Transaction, CategoryExpense, DailyExpense, WeeklyTrend } from '../types';
+import { Transaction, CategoryExpense, DailyExpense, WeeklyTrend, Goal } from '../types';
 import { format, subDays, startOfWeek, endOfWeek } from 'date-fns';
 
 // Mock data for our app - 40 transactions
@@ -57,13 +57,19 @@ const generateMockTransactions = (): Transaction[] => {
 
 interface TransactionContextType {
   transactions: Transaction[];
+  goals: Goal[];
   addTransaction: (transaction: Omit<Transaction, 'id'>) => void;
+  addGoal: (goal: Omit<Goal, 'id'>) => void;
+  updateGoal: (goalId: string, updates: Partial<Goal>) => void;
+  deleteGoal: (goalId: string) => void;
   getTotalIncome: () => number;
   getTotalExpenses: () => number;
   getCurrentBalance: () => number;
-  getCategoryExpenses: () => CategoryExpense[];
+  getCategoryExpenses: (selectedYear?: number, selectedMonth?: number) => CategoryExpense[];
   getDailyExpenses: () => DailyExpense[];
   getWeeklyTrends: () => WeeklyTrend[];
+  getMonthlyExpenses: (selectedYear?: number) => { month: string; total: number; year: number }[];
+  getAvailableYears: () => number[];
 }
 
 const TransactionContext = createContext<TransactionContextType | undefined>(undefined);
@@ -80,8 +86,36 @@ interface TransactionProviderProps {
   children: ReactNode;
 }
 
+// Mock goals data
+const generateMockGoals = (): Goal[] => {
+  return [
+    {
+      id: '1',
+      name: 'New Laptop',
+      targetAmount: 80000,
+      currentAmount: 25000,
+      category: 'Electronics',
+      description: 'Gaming laptop for development work',
+      targetDate: new Date(2025, 11, 31), // December 31, 2025
+      createdDate: new Date(2025, 8, 1), // September 1, 2025
+      completed: false,
+    },
+    {
+      id: '2',
+      name: 'Emergency Fund',
+      targetAmount: 200000,
+      currentAmount: 150000,
+      category: 'Other',
+      description: '6 months emergency fund',
+      createdDate: new Date(2025, 5, 1), // June 1, 2025
+      completed: false,
+    },
+  ];
+};
+
 export const TransactionProvider: React.FC<TransactionProviderProps> = ({ children }) => {
   const [transactions, setTransactions] = useState<Transaction[]>(generateMockTransactions());
+  const [goals, setGoals] = useState<Goal[]>(generateMockGoals());
 
   const addTransaction = (transaction: Omit<Transaction, 'id'>) => {
     const newTransaction: Transaction = {
@@ -89,6 +123,26 @@ export const TransactionProvider: React.FC<TransactionProviderProps> = ({ childr
       id: Math.random().toString(36).substr(2, 9)
     };
     setTransactions([...transactions, newTransaction]);
+  };
+
+  const addGoal = (goal: Omit<Goal, 'id'>) => {
+    const newGoal: Goal = {
+      ...goal,
+      id: Math.random().toString(36).substr(2, 9)
+    };
+    setGoals([...goals, newGoal]);
+  };
+
+  const updateGoal = (goalId: string, updates: Partial<Goal>) => {
+    setGoals(prevGoals =>
+      prevGoals.map(goal =>
+        goal.id === goalId ? { ...goal, ...updates } : goal
+      )
+    );
+  };
+
+  const deleteGoal = (goalId: string) => {
+    setGoals(prevGoals => prevGoals.filter(goal => goal.id !== goalId));
   };
 
   const getTotalIncome = () => {
@@ -108,11 +162,21 @@ export const TransactionProvider: React.FC<TransactionProviderProps> = ({ childr
   };
 
   // For the pie chart - category-wise expense distribution
-  const getCategoryExpenses = (): CategoryExpense[] => {
+  const getCategoryExpenses = (selectedYear?: number, selectedMonth?: number): CategoryExpense[] => {
     const categoryMap = new Map<string, number>();
     
     transactions
-      .filter(t => t.type === 'debit' && t.category)
+      .filter(t => {
+        if (t.type !== 'debit' || !t.category) return false;
+        
+        // Filter by year if provided
+        if (selectedYear && t.date.getFullYear() !== selectedYear) return false;
+        
+        // Filter by month if provided (0-indexed)
+        if (selectedMonth !== undefined && t.date.getMonth() !== selectedMonth) return false;
+        
+        return true;
+      })
       .forEach(t => {
         const category = t.category as string;
         const currentAmount = categoryMap.get(category) || 0;
@@ -205,17 +269,93 @@ export const TransactionProvider: React.FC<TransactionProviderProps> = ({ childr
     });
   };
 
+  // For the line chart - monthly expense totals (last 4 months)
+  const getMonthlyExpenses = (selectedYear?: number) => {
+    const currentYear = new Date().getFullYear();
+    const currentMonth = new Date().getMonth();
+    const year = selectedYear || currentYear;
+    
+    const monthlyExpenses = new Map<string, number>();
+    
+    // Get last 4 months from current date or selected year
+    let startMonth: number;
+    let targetYear: number = year;
+    
+    if (year === currentYear) {
+      // For current year, show last 4 months from current month
+      startMonth = Math.max(0, currentMonth - 3);
+    } else {
+      // For past years, show last 4 months of that year (Sep, Oct, Nov, Dec)
+      startMonth = 8; // September (0-indexed)
+    }
+    
+    // Initialize 4 months
+    for (let i = 0; i < 4; i++) {
+      const monthIndex = startMonth + i;
+      let displayYear = targetYear;
+      
+      // Handle year transition for current year
+      if (year === currentYear && monthIndex > 11) {
+        displayYear = targetYear + 1;
+      }
+      
+      const date = new Date(displayYear, monthIndex % 12, 1);
+      const monthKey = format(date, 'yyyy-MM');
+      monthlyExpenses.set(monthKey, 0);
+    }
+    
+    // Process all transactions for the target months
+    transactions
+      .filter(t => t.type === 'debit')
+      .forEach(t => {
+        const monthKey = format(t.date, 'yyyy-MM');
+        if (monthlyExpenses.has(monthKey)) {
+          const currentAmount = monthlyExpenses.get(monthKey) || 0;
+          monthlyExpenses.set(monthKey, currentAmount + t.amount);
+        }
+      });
+    
+    // Return monthly totals
+    return Array.from(monthlyExpenses).map(([monthKey, total]) => {
+      const date = new Date(monthKey + '-01');
+      return {
+        month: format(date, 'MMM'),
+        total: Math.round(total),
+        year: date.getFullYear()
+      };
+    });
+  };
+  
+  // Get available years starting from 2020
+  const getAvailableYears = () => {
+    const currentYear = new Date().getFullYear();
+    const years: number[] = [];
+    
+    // Generate years from 2020 to current year
+    for (let year = 2020; year <= currentYear; year++) {
+      years.push(year);
+    }
+    
+    return years.sort((a, b) => b - a); // Sort descending (newest first)
+  };
+
   return (
     <TransactionContext.Provider
       value={{
         transactions,
+        goals,
         addTransaction,
+        addGoal,
+        updateGoal,
+        deleteGoal,
         getTotalIncome,
         getTotalExpenses,
         getCurrentBalance,
         getCategoryExpenses,
         getDailyExpenses,
-        getWeeklyTrends
+        getWeeklyTrends,
+        getMonthlyExpenses,
+        getAvailableYears
       }}
     >
       {children}

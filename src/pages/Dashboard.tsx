@@ -12,6 +12,8 @@ import { useTransactions } from '../context/TransactionContext';
 import SummaryCard from '../components/SummaryCard';
 import ExpensePieChart from '../components/ExpensePieChart';
 import ExpenseBarChart from '../components/ExpenseBarChart';
+import ExpenseLineChart from '../components/ExpenseLineChart';
+import DailyExpenseChart from '../components/DailyExpenseChart';
 import RotatingQuotes from '../components/RotatingQuotes';
 
 const Dashboard: React.FC = () => {
@@ -22,7 +24,7 @@ const Dashboard: React.FC = () => {
     getCurrentBalance,
     getCategoryExpenses,
     getDailyExpenses,
-    getWeeklyTrends 
+    getWeeklyTrends
   } = useTransactions();
 
   const income = getTotalIncome();
@@ -127,6 +129,11 @@ const Dashboard: React.FC = () => {
           </Box>
         </Box>
 
+        {/* Monthly Expense Trend Line Chart - Full width */}
+        <motion.div variants={itemVariants}>
+          <ExpenseLineChart />
+        </motion.div>
+
         {/* Analytics Section - Moved to Bottom */}
         <motion.div variants={itemVariants}>
           <Typography variant="h5" sx={{ mb: 3, fontWeight: 600 }}>
@@ -137,7 +144,7 @@ const Dashboard: React.FC = () => {
         <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 3, mb: 3 }}>
           <Box sx={{ flex: '1 1 400px', minWidth: 0 }}>
             <motion.div variants={itemVariants}>
-              <ExpensePieChart categoryExpenses={categoryExpenses} />
+              <ExpensePieChart />
             </motion.div>
           </Box>
           <Box sx={{ flex: '1 1 500px', minWidth: 0 }}>
@@ -146,6 +153,11 @@ const Dashboard: React.FC = () => {
             </motion.div>
           </Box>
         </Box>
+
+        {/* Daily Analysis Chart - Full width at bottom */}
+        <motion.div variants={itemVariants}>
+          <DailyExpenseChart />
+        </motion.div>
           
         {/* Optional: Future Features Section */}
         <motion.div variants={itemVariants}>
