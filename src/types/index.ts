@@ -27,6 +27,13 @@ export interface WeeklyTrend {
   income: number;
 }
 
+export interface Investment {
+  id: string;
+  amount: number;
+  date: Date;
+  notes?: string;
+}
+
 export interface Goal {
   id: string;
   name: string;
@@ -37,4 +44,5 @@ export interface Goal {
   targetDate?: Date;
   createdDate: Date;
   completed: boolean;
+  investments?: Investment[];
 }

@@ -15,15 +15,23 @@ import {
   TextField,
   MenuItem,
   Alert,
+  List,
+  ListItem,
+  ListItemText,
+  Divider,
+  ListItemIcon,
 } from '@mui/material';
 import {
   Edit as EditIcon,
   Delete as DeleteIcon,
   AccessTime as TimeIcon,
   TrendingUp as TrendingUpIcon,
+  History as HistoryIcon,
+  AccountBalance as InvestIcon,
+  AttachMoney as MoneyIcon,
 } from '@mui/icons-material';
 import { format, differenceInDays, isBefore, isAfter } from 'date-fns';
-import { Goal } from '../types';
+import { Goal, Investment } from '../types';
 import { useTransactions } from '../context/TransactionContext';
 
 interface GoalCardProps {
@@ -34,11 +42,15 @@ interface GoalCardProps {
 }
 
 const GoalCard: React.FC<GoalCardProps> = ({ goal, onUpdate, onDelete, monthlySavings }) => {
-  const { getCurrentBalance } = useTransactions();
+  const { getCurrentBalance, addInvestmentToGoal } = useTransactions();
   const [timeLeft, setTimeLeft] = useState<string>('');
   const [editOpen, setEditOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
+  const [investOpen, setInvestOpen] = useState(false);
+  const [historyOpen, setHistoryOpen] = useState(false);
   const [editedGoal, setEditedGoal] = useState<Partial<Goal>>(goal);
+  const [investmentAmount, setInvestmentAmount] = useState<string>('');
+  const [investmentNotes, setInvestmentNotes] = useState<string>('');
 
   const categories = ['Electronics', 'Travel', 'Car', 'Home', 'Education', 'Health', 'Other'];
 
@@ -93,6 +105,30 @@ const GoalCard: React.FC<GoalCardProps> = ({ goal, onUpdate, onDelete, monthlySa
     setDeleteOpen(false);
   };
 
+  const handleInvest = () => {
+    const amount = parseFloat(investmentAmount);
+    if (amount > 0) {
+      const investment: Omit<Investment, 'id'> = {
+        amount,
+        date: new Date(),
+        notes: investmentNotes.trim() || undefined,
+      };
+      
+      addInvestmentToGoal(goal.id, investment);
+      setInvestmentAmount('');
+      setInvestmentNotes('');
+      setInvestOpen(false);
+    }
+  };
+
+  const handleCardClick = (e: React.MouseEvent) => {
+    // Don't open invest modal if clicking on action buttons
+    if ((e.target as Element).closest('.goal-card-actions')) {
+      return;
+    }
+    setInvestOpen(true);
+  };
+
   const getStatusColor = () => {
     if (goal.completed) return 'success';
     if (goal.targetDate && isBefore(new Date(goal.targetDate), new Date())) return 'error';
@@ -110,6 +146,7 @@ const GoalCard: React.FC<GoalCardProps> = ({ goal, onUpdate, onDelete, monthlySa
   return (
     <>
       <Card 
+        onClick={handleCardClick}
         sx={{ 
           height: '100%', 
           position: 'relative',
@@ -117,6 +154,7 @@ const GoalCard: React.FC<GoalCardProps> = ({ goal, onUpdate, onDelete, monthlySa
           border: '1px solid rgba(148, 163, 184, 0.1)',
           borderRadius: 3,
           transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+          cursor: 'pointer',
           '&:hover': {
             transform: 'translateY(-4px)',
             boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.3), 0 10px 10px -5px rgba(0, 0, 0, 0.1)',
@@ -138,10 +176,31 @@ const GoalCard: React.FC<GoalCardProps> = ({ goal, onUpdate, onDelete, monthlySa
             >
               {goal.name}
             </Typography>
-            <Box sx={{ display: 'flex', gap: 0.5 }}>
+            <Box className="goal-card-actions" sx={{ display: 'flex', gap: 0.5 }}>
+              {goal.investments && goal.investments.length > 0 && (
+                <IconButton 
+                  size="small" 
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setHistoryOpen(true);
+                  }}
+                  sx={{ 
+                    color: 'rgba(255, 255, 255, 0.6)',
+                    '&:hover': { 
+                      color: '#10b981',
+                      backgroundColor: 'rgba(16, 185, 129, 0.1)'
+                    }
+                  }}
+                >
+                  <HistoryIcon fontSize="small" />
+                </IconButton>
+              )}
               <IconButton 
                 size="small" 
-                onClick={() => setEditOpen(true)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setEditOpen(true);
+                }}
                 sx={{ 
                   color: 'rgba(255, 255, 255, 0.6)',
                   '&:hover': { 
@@ -154,7 +213,10 @@ const GoalCard: React.FC<GoalCardProps> = ({ goal, onUpdate, onDelete, monthlySa
               </IconButton>
               <IconButton 
                 size="small" 
-                onClick={() => setDeleteOpen(true)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setDeleteOpen(true);
+                }}
                 sx={{ 
                   color: 'rgba(255, 255, 255, 0.6)',
                   '&:hover': { 
@@ -651,6 +713,301 @@ const GoalCard: React.FC<GoalCardProps> = ({ goal, onUpdate, onDelete, monthlySa
         <DialogActions>
           <Button onClick={() => setDeleteOpen(false)}>Cancel</Button>
           <Button onClick={handleDelete} color="error" variant="contained">Delete</Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Investment Dialog */}
+      <Dialog 
+        open={investOpen} 
+        onClose={() => setInvestOpen(false)} 
+        maxWidth="sm" 
+        fullWidth
+        PaperProps={{
+          sx: {
+            borderRadius: 3,
+            background: 'linear-gradient(145deg, #1e293b 0%, #334155 100%)',
+            border: '1px solid rgba(148, 163, 184, 0.1)',
+          }
+        }}
+      >
+        <DialogTitle 
+          sx={{ 
+            pb: 1,
+            fontSize: '1.5rem',
+            fontWeight: 'bold',
+            color: 'white',
+            borderBottom: '1px solid rgba(148, 163, 184, 0.1)',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 1
+          }}
+        >
+          <InvestIcon sx={{ color: '#10b981' }} />
+          Want to invest in this?
+        </DialogTitle>
+        <DialogContent sx={{ pt: 3 }}>
+          <Box sx={{ mb: 3 }}>
+            <Typography variant="h6" sx={{ color: 'white', mb: 1 }}>
+              {goal.name}
+            </Typography>
+            <Typography variant="body2" sx={{ color: 'rgba(255, 255, 255, 0.7)' }}>
+              Target: ₹{goal.targetAmount.toLocaleString()} | 
+              Current: ₹{goal.currentAmount.toLocaleString()} | 
+              Remaining: ₹{(goal.targetAmount - goal.currentAmount).toLocaleString()}
+            </Typography>
+          </Box>
+
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+            <Box>
+              <Typography 
+                variant="body2" 
+                sx={{ 
+                  mb: 1, 
+                  color: 'rgba(255, 255, 255, 0.8)',
+                  fontSize: '0.9rem',
+                  fontWeight: '500'
+                }}
+              >
+                How much do you want to invest? *
+              </Typography>
+              <TextField
+                type="number"
+                value={investmentAmount}
+                onChange={(e) => setInvestmentAmount(e.target.value)}
+                fullWidth
+                required
+                placeholder="Enter amount"
+                variant="outlined"
+                InputProps={{
+                  startAdornment: <Typography sx={{ mr: 1, color: 'rgba(255, 255, 255, 0.7)' }}>₹</Typography>,
+                }}
+                sx={{
+                  '& .MuiOutlinedInput-root': {
+                    backgroundColor: 'rgba(30, 41, 59, 0.8)',
+                    borderRadius: 2,
+                    color: 'white',
+                    '& fieldset': {
+                      borderColor: 'rgba(148, 163, 184, 0.3)',
+                    },
+                    '&:hover fieldset': {
+                      borderColor: 'rgba(148, 163, 184, 0.5)',
+                    },
+                    '&.Mui-focused fieldset': {
+                      borderColor: '#10b981',
+                    },
+                  },
+                  '& .MuiInputBase-input::placeholder': {
+                    color: 'rgba(255, 255, 255, 0.5)',
+                    opacity: 1,
+                  },
+                }}
+              />
+            </Box>
+
+            <Box>
+              <Typography 
+                variant="body2" 
+                sx={{ 
+                  mb: 1, 
+                  color: 'rgba(255, 255, 255, 0.8)',
+                  fontSize: '0.9rem',
+                  fontWeight: '500'
+                }}
+              >
+                Notes (Optional)
+              </Typography>
+              <TextField
+                value={investmentNotes}
+                onChange={(e) => setInvestmentNotes(e.target.value)}
+                fullWidth
+                multiline
+                rows={2}
+                placeholder="Add a note about this investment"
+                variant="outlined"
+                sx={{
+                  '& .MuiOutlinedInput-root': {
+                    backgroundColor: 'rgba(30, 41, 59, 0.8)',
+                    borderRadius: 2,
+                    color: 'white',
+                    '& fieldset': {
+                      borderColor: 'rgba(148, 163, 184, 0.3)',
+                    },
+                    '&:hover fieldset': {
+                      borderColor: 'rgba(148, 163, 184, 0.5)',
+                    },
+                    '&.Mui-focused fieldset': {
+                      borderColor: '#10b981',
+                    },
+                  },
+                  '& .MuiInputBase-input::placeholder': {
+                    color: 'rgba(255, 255, 255, 0.5)',
+                    opacity: 1,
+                  },
+                }}
+              />
+            </Box>
+          </Box>
+        </DialogContent>
+        <DialogActions sx={{ p: 3, pt: 2 }}>
+          <Button 
+            onClick={() => {
+              setInvestOpen(false);
+              setInvestmentAmount('');
+              setInvestmentNotes('');
+            }}
+            sx={{
+              color: 'rgba(255, 255, 255, 0.7)',
+              textTransform: 'none',
+              fontWeight: '500',
+              px: 3,
+              py: 1,
+              borderRadius: 2,
+              '&:hover': {
+                backgroundColor: 'rgba(148, 163, 184, 0.1)',
+              },
+            }}
+          >
+            Cancel
+          </Button>
+          <Button 
+            onClick={handleInvest} 
+            variant="contained"
+            disabled={!investmentAmount || parseFloat(investmentAmount) <= 0}
+            sx={{
+              background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+              textTransform: 'none',
+              fontWeight: '600',
+              px: 4,
+              py: 1,
+              borderRadius: 2,
+              boxShadow: '0 4px 14px 0 rgba(16, 185, 129, 0.3)',
+              '&:hover': {
+                background: 'linear-gradient(135deg, #059669 0%, #047857 100%)',
+                boxShadow: '0 6px 20px 0 rgba(16, 185, 129, 0.4)',
+              },
+              '&:disabled': {
+                background: 'rgba(148, 163, 184, 0.3)',
+                color: 'rgba(255, 255, 255, 0.4)',
+                boxShadow: 'none',
+              },
+            }}
+          >
+            Invest Now
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Investment History Dialog */}
+      <Dialog 
+        open={historyOpen} 
+        onClose={() => setHistoryOpen(false)} 
+        maxWidth="sm" 
+        fullWidth
+        PaperProps={{
+          sx: {
+            borderRadius: 3,
+            background: 'linear-gradient(145deg, #1e293b 0%, #334155 100%)',
+            border: '1px solid rgba(148, 163, 184, 0.1)',
+          }
+        }}
+      >
+        <DialogTitle 
+          sx={{ 
+            pb: 1,
+            fontSize: '1.5rem',
+            fontWeight: 'bold',
+            color: 'white',
+            borderBottom: '1px solid rgba(148, 163, 184, 0.1)',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 1
+          }}
+        >
+          <HistoryIcon sx={{ color: '#3b82f6' }} />
+          Investment History
+        </DialogTitle>
+        <DialogContent sx={{ pt: 2, px: 0 }}>
+          <Box sx={{ px: 3, mb: 2 }}>
+            <Typography variant="h6" sx={{ color: 'white', mb: 1 }}>
+              {goal.name}
+            </Typography>
+            <Typography variant="body2" sx={{ color: 'rgba(255, 255, 255, 0.7)' }}>
+              Total Invested: ₹{goal.currentAmount.toLocaleString()}
+            </Typography>
+          </Box>
+
+          {goal.investments && goal.investments.length > 0 ? (
+            <List sx={{ width: '100%' }}>
+              {goal.investments
+                .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+                .map((investment, index) => (
+                <React.Fragment key={investment.id}>
+                  <ListItem sx={{ px: 3, py: 2 }}>
+                    <ListItemIcon>
+                      <MoneyIcon sx={{ color: '#10b981' }} />
+                    </ListItemIcon>
+                    <ListItemText
+                      primary={
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 0.5 }}>
+                          <Typography variant="h6" sx={{ color: '#10b981', fontWeight: 'bold' }}>
+                            ₹{investment.amount.toLocaleString()}
+                          </Typography>
+                          <Typography variant="caption" sx={{ color: 'rgba(255, 255, 255, 0.6)' }}>
+                            {format(new Date(investment.date), 'MMM dd, yyyy')}
+                          </Typography>
+                        </Box>
+                      }
+                      secondary={
+                        <Box>
+                          <Typography variant="body2" sx={{ color: 'rgba(255, 255, 255, 0.5)', fontSize: '0.85rem' }}>
+                            {format(new Date(investment.date), 'h:mm a')}
+                          </Typography>
+                          {investment.notes && (
+                            <Typography variant="body2" sx={{ color: 'rgba(255, 255, 255, 0.7)', mt: 0.5 }}>
+                              {investment.notes}
+                            </Typography>
+                          )}
+                        </Box>
+                      }
+                    />
+                  </ListItem>
+                  {index < (goal.investments?.length || 0) - 1 && (
+                    <Divider sx={{ borderColor: 'rgba(148, 163, 184, 0.1)' }} />
+                  )}
+                </React.Fragment>
+              ))}
+            </List>
+          ) : (
+            <Box sx={{ px: 3, py: 4, textAlign: 'center' }}>
+              <Typography variant="body1" sx={{ color: 'rgba(255, 255, 255, 0.7)' }}>
+                No investments yet
+              </Typography>
+              <Typography variant="body2" sx={{ color: 'rgba(255, 255, 255, 0.5)', mt: 1 }}>
+                Click on the goal card to make your first investment!
+              </Typography>
+            </Box>
+          )}
+        </DialogContent>
+        <DialogActions sx={{ p: 3, pt: 2 }}>
+          <Button 
+            onClick={() => setHistoryOpen(false)}
+            variant="contained"
+            sx={{
+              background: 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)',
+              textTransform: 'none',
+              fontWeight: '600',
+              px: 4,
+              py: 1,
+              borderRadius: 2,
+              boxShadow: '0 4px 14px 0 rgba(59, 130, 246, 0.3)',
+              '&:hover': {
+                background: 'linear-gradient(135deg, #2563eb 0%, #1e40af 100%)',
+                boxShadow: '0 6px 20px 0 rgba(59, 130, 246, 0.4)',
+              },
+            }}
+          >
+            Close
+          </Button>
         </DialogActions>
       </Dialog>
     </>

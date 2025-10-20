@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, ReactNode } from 'react';
-import { Transaction, CategoryExpense, DailyExpense, WeeklyTrend, Goal } from '../types';
+import { Transaction, CategoryExpense, DailyExpense, WeeklyTrend, Goal, Investment } from '../types';
 import { format, subDays, startOfWeek, endOfWeek } from 'date-fns';
 
 // Mock data for our app - 40 transactions
@@ -62,6 +62,7 @@ interface TransactionContextType {
   addGoal: (goal: Omit<Goal, 'id'>) => void;
   updateGoal: (goalId: string, updates: Partial<Goal>) => void;
   deleteGoal: (goalId: string) => void;
+  addInvestmentToGoal: (goalId: string, investment: Omit<Investment, 'id'>) => void;
   getTotalIncome: () => number;
   getTotalExpenses: () => number;
   getCurrentBalance: () => number;
@@ -88,6 +89,7 @@ interface TransactionProviderProps {
 
 // Mock goals data
 const generateMockGoals = (): Goal[] => {
+  const today = new Date();
   return [
     {
       id: '1',
@@ -99,6 +101,20 @@ const generateMockGoals = (): Goal[] => {
       targetDate: new Date(2025, 11, 31), // December 31, 2025
       createdDate: new Date(2025, 8, 1), // September 1, 2025
       completed: false,
+      investments: [
+        {
+          id: 'inv1',
+          amount: 15000,
+          date: subDays(today, 20),
+          notes: 'Initial investment from salary'
+        },
+        {
+          id: 'inv2',
+          amount: 10000,
+          date: subDays(today, 10),
+          notes: 'Freelance project bonus'
+        }
+      ]
     },
     {
       id: '2',
@@ -109,6 +125,26 @@ const generateMockGoals = (): Goal[] => {
       description: '6 months emergency fund',
       createdDate: new Date(2025, 5, 1), // June 1, 2025
       completed: false,
+      investments: [
+        {
+          id: 'inv3',
+          amount: 50000,
+          date: subDays(today, 60),
+          notes: 'Initial emergency fund setup'
+        },
+        {
+          id: 'inv4',
+          amount: 25000,
+          date: subDays(today, 30),
+          notes: 'Monthly contribution'
+        },
+        {
+          id: 'inv5',
+          amount: 75000,
+          date: subDays(today, 5),
+          notes: 'Large investment from bonus'
+        }
+      ]
     },
   ];
 };
@@ -143,6 +179,40 @@ export const TransactionProvider: React.FC<TransactionProviderProps> = ({ childr
 
   const deleteGoal = (goalId: string) => {
     setGoals(prevGoals => prevGoals.filter(goal => goal.id !== goalId));
+  };
+
+  const addInvestmentToGoal = (goalId: string, investment: Omit<Investment, 'id'>) => {
+    const newInvestment: Investment = {
+      ...investment,
+      id: Math.random().toString(36).substr(2, 9)
+    };
+
+    setGoals(prevGoals =>
+      prevGoals.map(goal => {
+        if (goal.id === goalId) {
+          const updatedInvestments = goal.investments ? [...goal.investments, newInvestment] : [newInvestment];
+          const newCurrentAmount = goal.currentAmount + investment.amount;
+          const isCompleted = newCurrentAmount >= goal.targetAmount;
+          
+          return {
+            ...goal,
+            investments: updatedInvestments,
+            currentAmount: newCurrentAmount,
+            completed: isCompleted
+          };
+        }
+        return goal;
+      })
+    );
+
+    // Also add this as a debit transaction to track the money flow
+    addTransaction({
+      amount: investment.amount,
+      date: investment.date,
+      type: 'debit',
+      category: 'Goals',
+      notes: `Investment in goal: ${goals.find(g => g.id === goalId)?.name || 'Unknown Goal'}${investment.notes ? ` - ${investment.notes}` : ''}`
+    });
   };
 
   const getTotalIncome = () => {
@@ -348,6 +418,7 @@ export const TransactionProvider: React.FC<TransactionProviderProps> = ({ childr
         addGoal,
         updateGoal,
         deleteGoal,
+        addInvestmentToGoal,
         getTotalIncome,
         getTotalExpenses,
         getCurrentBalance,
