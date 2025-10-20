@@ -261,77 +261,370 @@ const Goals: React.FC = () => {
       </Fab>
 
       {/* Add Goal Dialog */}
-      <Dialog open={addDialogOpen} onClose={() => setAddDialogOpen(false)} maxWidth="sm" fullWidth>
-        <DialogTitle>Create New Goal</DialogTitle>
-        <DialogContent>
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 1 }}>
-            <TextField
-              label="Goal Name"
-              value={newGoal.name}
-              onChange={(e) => setNewGoal({ ...newGoal, name: e.target.value })}
-              fullWidth
-              required
-              placeholder="e.g., New Laptop, Vacation, Emergency Fund"
-            />
-            <TextField
-              label="Description"
-              value={newGoal.description}
-              onChange={(e) => setNewGoal({ ...newGoal, description: e.target.value })}
-              fullWidth
-              multiline
-              rows={2}
-              placeholder="Describe what this goal is for..."
-            />
-            <TextField
-              label="Target Amount (₹)"
-              type="number"
-              value={newGoal.targetAmount || ''}
-              onChange={(e) => setNewGoal({ ...newGoal, targetAmount: Number(e.target.value) })}
-              fullWidth
-              required
-            />
-            <TextField
-              label="Current Amount (₹)"
-              type="number"
-              value={newGoal.currentAmount || ''}
-              onChange={(e) => setNewGoal({ ...newGoal, currentAmount: Number(e.target.value) })}
-              fullWidth
-              placeholder="How much have you already saved?"
-            />
-            <TextField
-              select
-              label="Category"
-              value={newGoal.category}
-              onChange={(e) => setNewGoal({ ...newGoal, category: e.target.value })}
-              fullWidth
-              required
-            >
-              {categories.map((category) => (
-                <MenuItem key={category} value={category}>
-                  {category}
-                </MenuItem>
-              ))}
-            </TextField>
-            <TextField
-              label="Target Date (Optional)"
-              type="date"
-              value={newGoal.targetDate ? format(new Date(newGoal.targetDate), 'yyyy-MM-dd') : ''}
-              onChange={(e) => setNewGoal({ 
-                ...newGoal, 
-                targetDate: e.target.value ? new Date(e.target.value) : undefined 
-              })}
-              fullWidth
-              InputLabelProps={{ shrink: true }}
-              helperText="When do you want to achieve this goal?"
-            />
+      <Dialog 
+        open={addDialogOpen} 
+        onClose={() => setAddDialogOpen(false)} 
+        maxWidth="sm" 
+        fullWidth
+        PaperProps={{
+          sx: {
+            borderRadius: 3,
+            background: 'linear-gradient(145deg, #1e293b 0%, #334155 100%)',
+            border: '1px solid rgba(148, 163, 184, 0.1)',
+          }
+        }}
+      >
+        <DialogTitle 
+          sx={{ 
+            pb: 1,
+            fontSize: '1.5rem',
+            fontWeight: 'bold',
+            color: 'white',
+            borderBottom: '1px solid rgba(148, 163, 184, 0.1)',
+          }}
+        >
+          Create New Goal
+        </DialogTitle>
+        <DialogContent sx={{ pt: 3 }}>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+            <Box>
+              <Typography 
+                variant="body2" 
+                sx={{ 
+                  mb: 1, 
+                  color: 'rgba(255, 255, 255, 0.8)',
+                  fontSize: '0.9rem',
+                  fontWeight: '500'
+                }}
+              >
+                Goal Name*
+              </Typography>
+              <TextField
+                value={newGoal.name}
+                onChange={(e) => setNewGoal({ ...newGoal, name: e.target.value })}
+                fullWidth
+                required
+                placeholder="e.g., Dream Vacation to Bali"
+                variant="outlined"
+                sx={{
+                  '& .MuiOutlinedInput-root': {
+                    backgroundColor: 'rgba(30, 41, 59, 0.8)',
+                    borderRadius: 2,
+                    color: 'white',
+                    '& fieldset': {
+                      borderColor: 'rgba(148, 163, 184, 0.3)',
+                    },
+                    '&:hover fieldset': {
+                      borderColor: 'rgba(148, 163, 184, 0.5)',
+                    },
+                    '&.Mui-focused fieldset': {
+                      borderColor: '#3b82f6',
+                    },
+                  },
+                  '& .MuiInputBase-input::placeholder': {
+                    color: 'rgba(255, 255, 255, 0.5)',
+                    opacity: 1,
+                  },
+                }}
+              />
+            </Box>
+
+            <Box>
+              <Typography 
+                variant="body2" 
+                sx={{ 
+                  mb: 1, 
+                  color: 'rgba(255, 255, 255, 0.8)',
+                  fontSize: '0.9rem',
+                  fontWeight: '500'
+                }}
+              >
+                Description
+              </Typography>
+              <TextField
+                value={newGoal.description}
+                onChange={(e) => setNewGoal({ ...newGoal, description: e.target.value })}
+                fullWidth
+                multiline
+                rows={3}
+                placeholder="What's this goal about?"
+                variant="outlined"
+                sx={{
+                  '& .MuiOutlinedInput-root': {
+                    backgroundColor: 'rgba(30, 41, 59, 0.8)',
+                    borderRadius: 2,
+                    color: 'white',
+                    '& fieldset': {
+                      borderColor: 'rgba(148, 163, 184, 0.3)',
+                    },
+                    '&:hover fieldset': {
+                      borderColor: 'rgba(148, 163, 184, 0.5)',
+                    },
+                    '&.Mui-focused fieldset': {
+                      borderColor: '#3b82f6',
+                    },
+                  },
+                  '& .MuiInputBase-input::placeholder': {
+                    color: 'rgba(255, 255, 255, 0.5)',
+                    opacity: 1,
+                  },
+                }}
+              />
+            </Box>
+
+            <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>
+              <Box>
+                <Typography 
+                  variant="body2" 
+                  sx={{ 
+                    mb: 1, 
+                    color: 'rgba(255, 255, 255, 0.8)',
+                    fontSize: '0.9rem',
+                    fontWeight: '500'
+                  }}
+                >
+                  Target Amount (₹)*
+                </Typography>
+                <TextField
+                  type="number"
+                  value={newGoal.targetAmount || ''}
+                  onChange={(e) => setNewGoal({ ...newGoal, targetAmount: Number(e.target.value) })}
+                  fullWidth
+                  required
+                  placeholder="50000"
+                  variant="outlined"
+                  sx={{
+                    '& .MuiOutlinedInput-root': {
+                      backgroundColor: 'rgba(30, 41, 59, 0.8)',
+                      borderRadius: 2,
+                      color: 'white',
+                      '& fieldset': {
+                        borderColor: 'rgba(148, 163, 184, 0.3)',
+                      },
+                      '&:hover fieldset': {
+                        borderColor: 'rgba(148, 163, 184, 0.5)',
+                      },
+                      '&.Mui-focused fieldset': {
+                        borderColor: '#3b82f6',
+                      },
+                    },
+                    '& .MuiInputBase-input::placeholder': {
+                      color: 'rgba(255, 255, 255, 0.5)',
+                      opacity: 1,
+                    },
+                  }}
+                />
+              </Box>
+
+              <Box>
+                <Typography 
+                  variant="body2" 
+                  sx={{ 
+                    mb: 1, 
+                    color: 'rgba(255, 255, 255, 0.8)',
+                    fontSize: '0.9rem',
+                    fontWeight: '500'
+                  }}
+                >
+                  Current Amount (₹)
+                </Typography>
+                <TextField
+                  type="number"
+                  value={newGoal.currentAmount || ''}
+                  onChange={(e) => setNewGoal({ ...newGoal, currentAmount: Number(e.target.value) })}
+                  fullWidth
+                  placeholder="0"
+                  variant="outlined"
+                  sx={{
+                    '& .MuiOutlinedInput-root': {
+                      backgroundColor: 'rgba(30, 41, 59, 0.8)',
+                      borderRadius: 2,
+                      color: 'white',
+                      '& fieldset': {
+                        borderColor: 'rgba(148, 163, 184, 0.3)',
+                      },
+                      '&:hover fieldset': {
+                        borderColor: 'rgba(148, 163, 184, 0.5)',
+                      },
+                      '&.Mui-focused fieldset': {
+                        borderColor: '#3b82f6',
+                      },
+                    },
+                    '& .MuiInputBase-input::placeholder': {
+                      color: 'rgba(255, 255, 255, 0.5)',
+                      opacity: 1,
+                    },
+                  }}
+                />
+              </Box>
+            </Box>
+
+            <Box>
+              <Typography 
+                variant="body2" 
+                sx={{ 
+                  mb: 1, 
+                  color: 'rgba(255, 255, 255, 0.8)',
+                  fontSize: '0.9rem',
+                  fontWeight: '500'
+                }}
+              >
+                Category*
+              </Typography>
+              <TextField
+                select
+                value={newGoal.category}
+                onChange={(e) => setNewGoal({ ...newGoal, category: e.target.value })}
+                fullWidth
+                required
+                placeholder="Select a category"
+                variant="outlined"
+                sx={{
+                  '& .MuiOutlinedInput-root': {
+                    backgroundColor: 'rgba(30, 41, 59, 0.8)',
+                    borderRadius: 2,
+                    color: 'white',
+                    '& fieldset': {
+                      borderColor: 'rgba(148, 163, 184, 0.3)',
+                    },
+                    '&:hover fieldset': {
+                      borderColor: 'rgba(148, 163, 184, 0.5)',
+                    },
+                    '&.Mui-focused fieldset': {
+                      borderColor: '#3b82f6',
+                    },
+                  },
+                  '& .MuiSelect-icon': {
+                    color: 'rgba(255, 255, 255, 0.7)',
+                  },
+                }}
+                SelectProps={{
+                  displayEmpty: true,
+                  renderValue: (selected: unknown) => {
+                    if (!selected) {
+                      return <span style={{ color: 'rgba(255, 255, 255, 0.5)' }}>Select a category</span>;
+                    }
+                    return selected as string;
+                  },
+                  MenuProps: {
+                    PaperProps: {
+                      sx: {
+                        backgroundColor: '#1e293b',
+                        border: '1px solid rgba(148, 163, 184, 0.3)',
+                        '& .MuiMenuItem-root': {
+                          color: 'white',
+                          '&:hover': {
+                            backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                          },
+                          '&.Mui-selected': {
+                            backgroundColor: 'rgba(59, 130, 246, 0.2)',
+                          },
+                        },
+                      },
+                    },
+                  },
+                }}
+              >
+                {categories.map((category) => (
+                  <MenuItem key={category} value={category}>
+                    {category}
+                  </MenuItem>
+                ))}
+              </TextField>
+            </Box>
+
+            <Box>
+              <Typography 
+                variant="body2" 
+                sx={{ 
+                  mb: 1, 
+                  color: 'rgba(255, 255, 255, 0.8)',
+                  fontSize: '0.9rem',
+                  fontWeight: '500'
+                }}
+              >
+                Target Date (Optional)
+              </Typography>
+              <TextField
+                type="date"
+                value={newGoal.targetDate ? format(new Date(newGoal.targetDate), 'yyyy-MM-dd') : ''}
+                onChange={(e) => setNewGoal({ 
+                  ...newGoal, 
+                  targetDate: e.target.value ? new Date(e.target.value) : undefined 
+                })}
+                fullWidth
+                InputLabelProps={{ shrink: true }}
+                variant="outlined"
+                sx={{
+                  '& .MuiOutlinedInput-root': {
+                    backgroundColor: 'rgba(30, 41, 59, 0.8)',
+                    borderRadius: 2,
+                    color: 'white',
+                    '& fieldset': {
+                      borderColor: 'rgba(148, 163, 184, 0.3)',
+                    },
+                    '&:hover fieldset': {
+                      borderColor: 'rgba(148, 163, 184, 0.5)',
+                    },
+                    '&.Mui-focused fieldset': {
+                      borderColor: '#3b82f6',
+                    },
+                  },
+                }}
+              />
+              <Typography 
+                variant="caption" 
+                sx={{ 
+                  mt: 0.5, 
+                  color: 'rgba(255, 255, 255, 0.6)',
+                  fontSize: '0.8rem',
+                  fontStyle: 'italic'
+                }}
+              >
+                When do you want to achieve this goal?
+              </Typography>
+            </Box>
           </Box>
         </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setAddDialogOpen(false)}>Cancel</Button>
+        <DialogActions sx={{ p: 3, pt: 2 }}>
+          <Button 
+            onClick={() => setAddDialogOpen(false)}
+            sx={{
+              color: 'rgba(255, 255, 255, 0.7)',
+              textTransform: 'none',
+              fontWeight: '500',
+              px: 3,
+              py: 1,
+              borderRadius: 2,
+              '&:hover': {
+                backgroundColor: 'rgba(148, 163, 184, 0.1)',
+              },
+            }}
+          >
+            Cancel
+          </Button>
           <Button 
             onClick={handleAddGoal} 
-            variant="contained" 
+            variant="contained"
             disabled={!newGoal.name || !newGoal.targetAmount}
+            sx={{
+              background: 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)',
+              textTransform: 'none',
+              fontWeight: '600',
+              px: 4,
+              py: 1,
+              borderRadius: 2,
+              boxShadow: '0 4px 14px 0 rgba(59, 130, 246, 0.3)',
+              '&:hover': {
+                background: 'linear-gradient(135deg, #2563eb 0%, #1e40af 100%)',
+                boxShadow: '0 6px 20px 0 rgba(59, 130, 246, 0.4)',
+              },
+              '&:disabled': {
+                background: 'rgba(148, 163, 184, 0.3)',
+                color: 'rgba(255, 255, 255, 0.4)',
+                boxShadow: 'none',
+              },
+            }}
           >
             Create Goal
           </Button>
