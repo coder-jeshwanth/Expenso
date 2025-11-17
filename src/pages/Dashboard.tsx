@@ -79,25 +79,25 @@ const Dashboard: React.FC = () => {
             <Box sx={{ display: 'flex', gap: { xs: 1, sm: 2 }, width: { xs: '100%', sm: 'auto' } }}>
               <Button 
                 component={Link} 
-                to="/add-credit" 
+                to="/add-transaction?type=credit" 
                 variant="outlined" 
                 color="primary"
                 startIcon={!isMobile && <AddIcon />}
                 size={isMobile ? "small" : "medium"}
                 sx={{ flex: { xs: 1, sm: 'none' } }}
               >
-                {isMobile ? t('nav.addCredit').split(' ')[1] || 'Credit' : t('nav.addCredit')}
+                {isMobile ? 'Income' : 'Add Income'}
               </Button>
               <Button 
                 component={Link} 
-                to="/add-debit" 
+                to="/add-transaction?type=debit" 
                 variant="contained" 
                 color="primary"
                 startIcon={!isMobile && <AddIcon />}
                 size={isMobile ? "small" : "medium"}
                 sx={{ flex: { xs: 1, sm: 'none' } }}
               >
-                {isMobile ? t('nav.addExpense').split(' ')[1] || 'Expense' : t('nav.addExpense')}
+                {isMobile ? 'Expense' : 'Add Expense'}
               </Button>
             </Box>
           </Box>

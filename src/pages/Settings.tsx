@@ -28,9 +28,10 @@ import {
   Person as PersonIcon,
   Save as SaveIcon,
   Close as CloseIcon,
-  ChevronRight as ChevronRightIcon
+  ChevronRight as ChevronRightIcon,
+  Logout as LogoutIcon
 } from '@mui/icons-material';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useThemeMode } from '../context/ThemeContext';
 import { useLanguage } from '../context/LanguageContext';
 import useMediaQuery from '@mui/material/useMediaQuery';
@@ -44,6 +45,7 @@ interface UserProfile {
 
 const Settings: React.FC = () => {
   const theme = useTheme();
+  const navigate = useNavigate();
   const { isDarkMode, toggleDarkMode } = useThemeMode();
   const { language, setLanguage, t } = useLanguage();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
@@ -108,6 +110,14 @@ const Settings: React.FC = () => {
     setConfirmPassword('');
     setOpenSecurityModal(false);
   };
+
+  const handleLogout = () => {
+    localStorage.removeItem('isAuthenticated');
+    localStorage.removeItem('userEmail');
+    localStorage.removeItem('userName');
+    localStorage.removeItem('userPhone');
+    navigate('/auth');
+  };
   
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -130,151 +140,369 @@ const Settings: React.FC = () => {
   };
 
   return (
-    <Container maxWidth="md" sx={{ py: { xs: 2, sm: 4 }, px: { xs: 2, sm: 3 } }}>
-      <motion.div
-        variants={containerVariants}
-        initial="hidden"
-        animate="visible"
+    <Box sx={{ 
+      display: 'flex', 
+      justifyContent: 'center',
+      width: '100%',
+      px: { xs: 2, sm: 3, md: 4 },
+      py: { xs: 3, sm: 4, md: 5 }
+    }}>
+      <Container 
+        maxWidth={false}
+        sx={{ 
+          maxWidth: '900px',
+          width: { xs: '100%', sm: '85%', md: '70%' }
+        }}
       >
-        <motion.div variants={itemVariants}>
-          <Box sx={{ mb: { xs: 3, sm: 4 }, display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, alignItems: { xs: 'flex-start', sm: 'center' }, justifyContent: 'space-between', gap: { xs: 2, sm: 0 } }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', width: { xs: '100%', sm: 'auto' } }}>
-              <Button 
-                component={Link} 
-                to="/" 
-                startIcon={<ArrowBackIcon />}
-                sx={{ mr: { xs: 2, sm: 3 } }}
-                variant="outlined"
-                size={isMobile ? "small" : "medium"}
-              >
-                {t('settings.backToDashboard')}
-              </Button>
-              <Typography variant={isMobile ? "h5" : "h4"} sx={{ fontWeight: 'bold', color: theme.palette.primary.main }}>
-                {t('settings.title')}
-              </Typography>
-            </Box>
-          </Box>
+        <motion.div
+          variants={containerVariants}
+          initial="hidden"
+          animate="visible"
+        >
+          <motion.div variants={itemVariants}>
+            <Paper
+              elevation={0}
+              sx={{
+                borderRadius: 4,
+                overflow: 'hidden',
+                border: `1px solid ${theme.palette.divider}`,
+                boxShadow: theme.palette.mode === 'dark' 
+                  ? '0px 4px 24px rgba(0, 0, 0, 0.3)' 
+                  : '0px 4px 24px rgba(0, 0, 0, 0.06)',
+              }}
+            >
+              <List sx={{ py: 0 }}>
+                {/* Account Section */}
+                <Box sx={{ px: 3, pt: 3, pb: 1.5 }}>
+                  <Typography 
+                    variant="overline" 
+                    sx={{ 
+                      fontWeight: 700,
+                      fontSize: '0.75rem',
+                      letterSpacing: '0.1em',
+                      color: theme.palette.text.secondary
+                    }}
+                  >
+                    ACCOUNT
+                  </Typography>
+                </Box>
+                
+                <ListItem 
+                  sx={{ 
+                    py: 2.5,
+                    px: 3,
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease',
+                    '&:hover': {
+                      transform: 'scale(1.01)',
+                      backgroundColor: theme.palette.mode === 'dark' 
+                        ? 'rgba(255, 255, 255, 0.03)' 
+                        : 'rgba(0, 0, 0, 0.02)',
+                      boxShadow: '0 2px 8px rgba(0, 0, 0, 0.05)'
+                    }
+                  }}
+                  onClick={() => setOpenProfileModal(true)}
+                >
+                  <ListItemIcon sx={{ minWidth: 48 }}>
+                    <PersonIcon sx={{ color: '#9c27b0', fontSize: 24 }} />
+                  </ListItemIcon>
+                  <ListItemText 
+                    primary={t('settings.myProfile')} 
+                    secondary={t('settings.myProfileDesc')}
+                    primaryTypographyProps={{ 
+                      fontSize: '1rem',
+                      fontWeight: 500
+                    }}
+                    secondaryTypographyProps={{ 
+                      fontSize: '0.875rem',
+                      mt: 0.5
+                    }}
+                  />
+                  <ChevronRightIcon sx={{ fontSize: 20, color: theme.palette.text.secondary }} />
+                </ListItem>
+                
+                <Divider sx={{ mx: 3, opacity: theme.palette.mode === 'dark' ? 0.08 : 0.12 }} />
+                
+                {/* Preferences Section */}
+                <Box sx={{ px: 3, pt: 3, pb: 1.5 }}>
+                  <Typography 
+                    variant="overline" 
+                    sx={{ 
+                      fontWeight: 700,
+                      fontSize: '0.75rem',
+                      letterSpacing: '0.1em',
+                      color: theme.palette.text.secondary
+                    }}
+                  >
+                    PREFERENCES
+                  </Typography>
+                </Box>
+                
+                <ListItem 
+                  sx={{ 
+                    py: 2.5,
+                    px: 3,
+                    transition: 'all 0.2s ease',
+                    '&:hover': {
+                      transform: 'scale(1.01)',
+                      backgroundColor: theme.palette.mode === 'dark' 
+                        ? 'rgba(255, 255, 255, 0.03)' 
+                        : 'rgba(0, 0, 0, 0.02)'
+                    }
+                  }}
+                >
+                  <ListItemIcon sx={{ minWidth: 48 }}>
+                    <DarkModeIcon sx={{ color: '#9c27b0', fontSize: 24 }} />
+                  </ListItemIcon>
+                  <ListItemText 
+                    primary={t('settings.darkMode')} 
+                    secondary={isDarkMode ? t('settings.darkModeEnabled') : t('settings.lightModeEnabled')}
+                    primaryTypographyProps={{ 
+                      fontSize: '1rem',
+                      fontWeight: 500
+                    }}
+                    secondaryTypographyProps={{ 
+                      fontSize: '0.875rem',
+                      mt: 0.5
+                    }}
+                  />
+                  <Switch 
+                    edge="end" 
+                    checked={isDarkMode}
+                    onChange={toggleDarkMode}
+                    sx={{
+                      '& .MuiSwitch-switchBase.Mui-checked': {
+                        color: '#9c27b0',
+                      },
+                      '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track': {
+                        backgroundColor: '#9c27b0',
+                      },
+                    }}
+                  />
+                </ListItem>
+                
+                <Divider sx={{ mx: 3, opacity: theme.palette.mode === 'dark' ? 0.08 : 0.12 }} />
+                
+                {/* App Settings Section */}
+                <Box sx={{ px: 3, pt: 3, pb: 1.5 }}>
+                  <Typography 
+                    variant="overline" 
+                    sx={{ 
+                      fontWeight: 700,
+                      fontSize: '0.75rem',
+                      letterSpacing: '0.1em',
+                      color: theme.palette.text.secondary
+                    }}
+                  >
+                    APP SETTINGS
+                  </Typography>
+                </Box>
+                
+                <ListItem 
+                  sx={{ 
+                    py: 2.5,
+                    px: 3,
+                    transition: 'all 0.2s ease',
+                    '&:hover': {
+                      transform: 'scale(1.01)',
+                      backgroundColor: theme.palette.mode === 'dark' 
+                        ? 'rgba(255, 255, 255, 0.03)' 
+                        : 'rgba(0, 0, 0, 0.02)'
+                    }
+                  }}
+                >
+                  <ListItemIcon sx={{ minWidth: 48 }}>
+                    <NotificationsIcon sx={{ color: '#9c27b0', fontSize: 24 }} />
+                  </ListItemIcon>
+                  <ListItemText 
+                    primary={t('settings.notifications')} 
+                    secondary={t('settings.notificationsDesc')}
+                    primaryTypographyProps={{ 
+                      fontSize: '1rem',
+                      fontWeight: 500
+                    }}
+                    secondaryTypographyProps={{ 
+                      fontSize: '0.875rem',
+                      mt: 0.5
+                    }}
+                  />
+                  <Switch 
+                    edge="end" 
+                    defaultChecked
+                    sx={{
+                      '& .MuiSwitch-switchBase.Mui-checked': {
+                        color: '#9c27b0',
+                      },
+                      '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track': {
+                        backgroundColor: '#9c27b0',
+                      },
+                    }}
+                  />
+                </ListItem>
+                
+                <Divider sx={{ mx: 3, opacity: theme.palette.mode === 'dark' ? 0.08 : 0.12 }} />
+                
+                <ListItem 
+                  sx={{ 
+                    py: 2.5,
+                    px: 3,
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease',
+                    '&:hover': {
+                      transform: 'scale(1.01)',
+                      backgroundColor: theme.palette.mode === 'dark' 
+                        ? 'rgba(255, 255, 255, 0.03)' 
+                        : 'rgba(0, 0, 0, 0.02)',
+                      boxShadow: '0 2px 8px rgba(0, 0, 0, 0.05)'
+                    }
+                  }}
+                  onClick={() => setOpenLanguageModal(true)}
+                >
+                  <ListItemIcon sx={{ minWidth: 48 }}>
+                    <LanguageIcon sx={{ color: '#9c27b0', fontSize: 24 }} />
+                  </ListItemIcon>
+                  <ListItemText 
+                    primary={t('settings.language')} 
+                    secondary={language}
+                    primaryTypographyProps={{ 
+                      fontSize: '1rem',
+                      fontWeight: 500
+                    }}
+                    secondaryTypographyProps={{ 
+                      fontSize: '0.875rem',
+                      mt: 0.5
+                    }}
+                  />
+                  <ChevronRightIcon sx={{ fontSize: 20, color: theme.palette.text.secondary }} />
+                </ListItem>
+                
+                <Divider sx={{ mx: 3, opacity: theme.palette.mode === 'dark' ? 0.08 : 0.12 }} />
+                
+                <ListItem 
+                  sx={{ 
+                    py: 2.5,
+                    px: 3,
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease',
+                    '&:hover': {
+                      transform: 'scale(1.01)',
+                      backgroundColor: theme.palette.mode === 'dark' 
+                        ? 'rgba(255, 255, 255, 0.03)' 
+                        : 'rgba(0, 0, 0, 0.02)',
+                      boxShadow: '0 2px 8px rgba(0, 0, 0, 0.05)'
+                    }
+                  }}
+                  onClick={() => setOpenSecurityModal(true)}
+                >
+                  <ListItemIcon sx={{ minWidth: 48 }}>
+                    <SecurityIcon sx={{ color: '#9c27b0', fontSize: 24 }} />
+                  </ListItemIcon>
+                  <ListItemText 
+                    primary={t('settings.security')} 
+                    secondary={t('settings.securityDesc')}
+                    primaryTypographyProps={{ 
+                      fontSize: '1rem',
+                      fontWeight: 500
+                    }}
+                    secondaryTypographyProps={{ 
+                      fontSize: '0.875rem',
+                      mt: 0.5
+                    }}
+                  />
+                  <ChevronRightIcon sx={{ fontSize: 20, color: theme.palette.text.secondary }} />
+                </ListItem>
+                
+                <Divider sx={{ mx: 3, opacity: theme.palette.mode === 'dark' ? 0.08 : 0.12 }} />
+                
+                {/* About Section */}
+                <Box sx={{ px: 3, pt: 3, pb: 1.5 }}>
+                  <Typography 
+                    variant="overline" 
+                    sx={{ 
+                      fontWeight: 700,
+                      fontSize: '0.75rem',
+                      letterSpacing: '0.1em',
+                      color: theme.palette.text.secondary
+                    }}
+                  >
+                    ABOUT
+                  </Typography>
+                </Box>
+                
+                <ListItem sx={{ py: 2.5, px: 3 }}>
+                  <ListItemIcon sx={{ minWidth: 48 }}>
+                    <InfoIcon sx={{ color: '#9c27b0', fontSize: 24 }} />
+                  </ListItemIcon>
+                  <ListItemText 
+                    primary={t('settings.about')} 
+                    secondary={t('settings.version')}
+                    primaryTypographyProps={{ 
+                      fontSize: '1rem',
+                      fontWeight: 500
+                    }}
+                    secondaryTypographyProps={{ 
+                      fontSize: '0.875rem',
+                      mt: 0.5
+                    }}
+                  />
+                </ListItem>
+                
+                <Divider sx={{ mx: 3, opacity: theme.palette.mode === 'dark' ? 0.08 : 0.12 }} />
+                
+                {/* Logout Section */}
+                <Box sx={{ px: 3, pt: 3, pb: 1.5 }}>
+                  <Typography 
+                    variant="overline" 
+                    sx={{ 
+                      fontWeight: 700,
+                      fontSize: '0.75rem',
+                      letterSpacing: '0.1em',
+                      color: theme.palette.text.secondary
+                    }}
+                  >
+                    LOGOUT
+                  </Typography>
+                </Box>
+                
+                <ListItem 
+                  sx={{ 
+                    py: 2.5,
+                    px: 3,
+                    mb: 1,
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease',
+                    '&:hover': {
+                      transform: 'scale(1.01)',
+                      backgroundColor: theme.palette.mode === 'dark' 
+                        ? 'rgba(244, 67, 54, 0.1)' 
+                        : 'rgba(244, 67, 54, 0.05)',
+                      boxShadow: '0 2px 12px rgba(244, 67, 54, 0.2)'
+                    }
+                  }}
+                  onClick={handleLogout}
+                >
+                  <ListItemIcon sx={{ minWidth: 48 }}>
+                    <LogoutIcon sx={{ color: theme.palette.error.main, fontSize: 24 }} />
+                  </ListItemIcon>
+                  <ListItemText 
+                    primary="Logout" 
+                    secondary="Sign out from your account"
+                    primaryTypographyProps={{ 
+                      fontSize: '1rem',
+                      fontWeight: 700,
+                      color: theme.palette.error.main
+                    }}
+                    secondaryTypographyProps={{ 
+                      fontSize: '0.875rem',
+                      mt: 0.5
+                    }}
+                  />
+                </ListItem>
+              </List>
+            </Paper>
+          </motion.div>
         </motion.div>
-
-        <motion.div variants={itemVariants}>
-          <Paper
-            elevation={1}
-            sx={{
-              borderRadius: { xs: 3, sm: 4 },
-              overflow: 'hidden',
-              boxShadow: theme.palette.mode === 'dark' 
-                ? '0px 8px 32px rgba(0, 0, 0, 0.3)' 
-                : '0px 8px 32px rgba(0, 0, 0, 0.08)',
-              mb: 4,
-              border: `1px solid ${theme.palette.divider}`,
-            }}
-          >
-            <List sx={{ py: 0 }}>
-              <ListItem 
-                sx={{ py: { xs: 1.5, sm: 2 }, cursor: 'pointer' }}
-                onClick={() => setOpenProfileModal(true)}
-              >
-                <ListItemIcon sx={{ minWidth: { xs: 40, sm: 56 } }}>
-                  <PersonIcon sx={{ color: theme.palette.primary.main, fontSize: { xs: 20, sm: 24 } }} />
-                </ListItemIcon>
-                <ListItemText 
-                  primary={t('settings.myProfile')} 
-                  secondary={t('settings.myProfileDesc')}
-                  primaryTypographyProps={{ fontSize: { xs: '0.95rem', sm: '1rem' } }}
-                  secondaryTypographyProps={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}
-                />
-                <ChevronRightIcon sx={{ fontSize: { xs: 20, sm: 24 } }} />
-              </ListItem>
-              
-              <Divider variant="inset" component="li" />
-              
-              <ListItem sx={{ py: { xs: 1.5, sm: 2 } }}>
-                <ListItemIcon sx={{ minWidth: { xs: 40, sm: 56 } }}>
-                  <DarkModeIcon sx={{ color: theme.palette.primary.main, fontSize: { xs: 20, sm: 24 } }} />
-                </ListItemIcon>
-                <ListItemText 
-                  primary={t('settings.darkMode')} 
-                  secondary={isDarkMode ? t('settings.darkModeEnabled') : t('settings.lightModeEnabled')}
-                  primaryTypographyProps={{ fontSize: { xs: '0.95rem', sm: '1rem' } }}
-                  secondaryTypographyProps={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}
-                />
-                <Switch 
-                  edge="end" 
-                  checked={isDarkMode}
-                  onChange={toggleDarkMode}
-                  color="primary"
-                  size={isMobile ? "small" : "medium"}
-                />
-              </ListItem>
-              
-              <Divider variant="inset" component="li" />
-              
-              <ListItem sx={{ py: { xs: 1.5, sm: 2 } }}>
-                <ListItemIcon sx={{ minWidth: { xs: 40, sm: 56 } }}>
-                  <NotificationsIcon sx={{ fontSize: { xs: 20, sm: 24 } }} />
-                </ListItemIcon>
-                <ListItemText 
-                  primary={t('settings.notifications')} 
-                  secondary={t('settings.notificationsDesc')}
-                  primaryTypographyProps={{ fontSize: { xs: '0.95rem', sm: '1rem' } }}
-                  secondaryTypographyProps={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}
-                />
-                <Switch edge="end" defaultChecked size={isMobile ? "small" : "medium"} />
-              </ListItem>
-              
-              <Divider variant="inset" component="li" />
-              
-              <ListItem 
-                sx={{ py: { xs: 1.5, sm: 2 }, cursor: 'pointer' }}
-                onClick={() => setOpenLanguageModal(true)}
-              >
-                <ListItemIcon sx={{ minWidth: { xs: 40, sm: 56 } }}>
-                  <LanguageIcon sx={{ fontSize: { xs: 20, sm: 24 } }} />
-                </ListItemIcon>
-                <ListItemText 
-                  primary={t('settings.language')} 
-                  secondary={language}
-                  primaryTypographyProps={{ fontSize: { xs: '0.95rem', sm: '1rem' } }}
-                  secondaryTypographyProps={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}
-                />
-                <ChevronRightIcon sx={{ fontSize: { xs: 20, sm: 24 } }} />
-              </ListItem>
-              
-              <Divider variant="inset" component="li" />
-              
-              <ListItem 
-                sx={{ py: { xs: 1.5, sm: 2 }, cursor: 'pointer' }}
-                onClick={() => setOpenSecurityModal(true)}
-              >
-                <ListItemIcon sx={{ minWidth: { xs: 40, sm: 56 } }}>
-                  <SecurityIcon sx={{ fontSize: { xs: 20, sm: 24 } }} />
-                </ListItemIcon>
-                <ListItemText 
-                  primary={t('settings.security')} 
-                  secondary={t('settings.securityDesc')}
-                  primaryTypographyProps={{ fontSize: { xs: '0.95rem', sm: '1rem' } }}
-                  secondaryTypographyProps={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}
-                />
-                <ChevronRightIcon sx={{ fontSize: { xs: 20, sm: 24 } }} />
-              </ListItem>
-              
-              <Divider variant="inset" component="li" />
-              
-              <ListItem sx={{ py: { xs: 1.5, sm: 2 } }}>
-                <ListItemIcon sx={{ minWidth: { xs: 40, sm: 56 } }}>
-                  <InfoIcon sx={{ fontSize: { xs: 20, sm: 24 } }} />
-                </ListItemIcon>
-                <ListItemText 
-                  primary={t('settings.about')} 
-                  secondary={t('settings.version')}
-                  primaryTypographyProps={{ fontSize: { xs: '0.95rem', sm: '1rem' } }}
-                  secondaryTypographyProps={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}
-                />
-              </ListItem>
-            </List>
-          </Paper>
-        </motion.div>
-      </motion.div>
+      </Container>
 
       {/* Profile Modal */}
       <Modal
@@ -545,7 +773,7 @@ const Settings: React.FC = () => {
           </Box>
         </Box>
       </Modal>
-    </Container>
+    </Box>
   );
 };
 

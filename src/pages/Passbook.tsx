@@ -29,7 +29,8 @@ import {
   TrendingDown as ExpenseIcon,
   Search as SearchIcon,
   GetApp as DownloadIcon,
-  ViewList as AllIcon
+  ViewList as AllIcon,
+  AccountBalance as BalanceIcon
 } from '@mui/icons-material';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
@@ -44,6 +45,8 @@ const Passbook: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState('all');
   const [currentPage, setCurrentPage] = useState(1);
+  const [fromDate, setFromDate] = useState('');
+  const [toDate, setToDate] = useState('');
   const itemsPerPage = 10;
 
   const containerVariants = {
@@ -79,7 +82,13 @@ const Passbook: React.FC = () => {
         filterType === 'all' || 
         transaction.type === filterType;
       
-      return matchesSearch && matchesFilter;
+      // Date range filtering
+      const transactionDate = new Date(transaction.date);
+      const matchesDateRange = 
+        (!fromDate || transactionDate >= new Date(fromDate)) &&
+        (!toDate || transactionDate <= new Date(toDate));
+      
+      return matchesSearch && matchesFilter && matchesDateRange;
     })
     .sort((a, b) => {
       // Default sort by date (newest first)
@@ -96,6 +105,29 @@ const Passbook: React.FC = () => {
 
   const formatAmount = (amount: number) => {
     return `₹${amount.toLocaleString('en-IN')}`;
+  };
+
+  // Download transactions as CSV
+  const handleDownload = () => {
+    const csvContent = [
+      ['Date', 'Type', 'Category', 'Source', 'Amount', 'Notes'],
+      ...filteredTransactions.map(t => [
+        formatDate(t.date),
+        t.type === 'credit' ? 'Income' : 'Expense',
+        t.category || '',
+        t.source || '',
+        t.amount,
+        t.notes || ''
+      ])
+    ].map(row => row.join(',')).join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `transactions_${new Date().toISOString().split('T')[0]}.csv`;
+    a.click();
+    window.URL.revokeObjectURL(url);
   };
 
   const getRunningBalance = (index: number) => {
@@ -152,211 +184,425 @@ const Passbook: React.FC = () => {
   // Reset to page 1 when search term or filter changes
   React.useEffect(() => {
     setCurrentPage(1);
-  }, [searchTerm, filterType]);
+  }, [searchTerm, filterType, fromDate, toDate]);
 
   return (
-    <Container maxWidth="lg" sx={{ py: { xs: 2, sm: 4 }, px: { xs: 1, sm: 3 } }}>
-      <motion.div
-        variants={containerVariants}
-        initial="hidden"
-        animate="visible"
-      >
-        {/* Header Section */}
-        <motion.div variants={itemVariants}>
-          <Box sx={{ mb: { xs: 2, sm: 4 }, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexDirection: { xs: 'column', sm: 'row' }, gap: { xs: 2, sm: 0 } }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', width: { xs: '100%', sm: 'auto' } }}>
-              <Button 
-                component={Link} 
-                to="/" 
-                startIcon={<ArrowBackIcon />}
-                sx={{ mr: { xs: 2, sm: 3 } }}
-                variant="outlined"
-                size={isMobile ? "small" : "medium"}
-              >
-                {isMobile ? 'Back' : 'Back to Dashboard'}
-              </Button>
-              <Typography variant={isMobile ? "h5" : "h4"} sx={{ fontWeight: 'bold', color: theme.palette.primary.main }}>
-                Passbook
-              </Typography>
-            </Box>
-            <Box sx={{ display: { xs: 'none', sm: 'flex' }, gap: 1 }}>
-              <IconButton
-                sx={{ 
-                  border: `1px solid ${theme.palette.divider}`,
-                  borderRadius: 2
-                }}
-              >
-                <DownloadIcon />
-              </IconButton>
-            </Box>
-          </Box>
-        </motion.div>
-
-        {/* Filters Section */}
-        <motion.div variants={itemVariants}>
-          <Paper
-            elevation={1}
-            sx={{
-              p: { xs: 2, sm: 3 },
-              borderRadius: { xs: 2, sm: 3 },
-              mb: { xs: 2, sm: 3 },
-              background: theme.palette.mode === 'dark' 
-                ? 'linear-gradient(135deg, #1a1a2e 0%, #16213e 100%)'
-                : 'linear-gradient(135deg, #ffffff 0%, #f8f9ff 100%)'
-            }}
-          >
-            <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', alignItems: 'center' }}>
-              <TextField
-                label="Search transactions"
-                placeholder={isMobile ? "Search..." : "Search by amount, category, notes, or source..."}
-                variant="outlined"
-                size={isMobile ? "small" : "medium"}
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                InputProps={{
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <SearchIcon />
-                    </InputAdornment>
-                  ),
-                }}
-                sx={{ 
-                  minWidth: 200, 
-                  flex: 1,
-                  '& .MuiOutlinedInput-root': {
-                    height: '56px',
-                    '&:hover fieldset': {
-                      borderColor: theme.palette.primary.main,
-                    },
-                    '&.Mui-focused fieldset': {
-                      borderColor: theme.palette.primary.main,
-                      borderWidth: 2,
-                    },
-                  },
-                  '& .MuiInputBase-input': {
-                    padding: '16px 14px',
-                  },
-                  '& .MuiInputLabel-root.Mui-focused': {
-                    color: theme.palette.primary.main,
+    <Container maxWidth="xl" sx={{ py: 4, px: { xs: 2, sm: 3, md: 4 } }}>
+      <Box sx={{ maxWidth: 1200, mx: 'auto' }}>
+        <motion.div
+          variants={containerVariants}
+          initial="hidden"
+          animate="visible"
+        >
+          {/* Transaction Summary */}
+          <motion.div variants={itemVariants}>
+            <Box sx={{ 
+              display: 'flex', 
+              gap: 3, 
+              mb: 4, 
+              justifyContent: 'center',
+              flexWrap: { xs: 'wrap', md: 'nowrap' }
+            }}>
+              <Paper
+                elevation={0}
+                sx={{
+                  p: 3,
+                  borderRadius: 3,
+                  flex: { xs: '1 1 calc(50% - 12px)', md: '1 1 0' },
+                  maxWidth: { xs: 'none', md: 350 },
+                  minWidth: { xs: 150, md: 280 },
+                  border: `2px solid ${theme.palette.success.main}40`,
+                  background: theme.palette.mode === 'dark' 
+                    ? `linear-gradient(135deg, ${theme.palette.success.main}15, ${theme.palette.success.main}08)`
+                    : `linear-gradient(135deg, ${theme.palette.success.main}08, #ffffff)`,
+                  boxShadow: theme.palette.mode === 'dark'
+                    ? `0 8px 32px ${theme.palette.success.main}20`
+                    : `0 4px 20px ${theme.palette.success.main}15`,
+                  transition: 'all 0.3s ease',
+                  '&:hover': {
+                    transform: 'translateY(-4px)',
+                    boxShadow: theme.palette.mode === 'dark'
+                      ? `0 12px 40px ${theme.palette.success.main}30`
+                      : `0 8px 30px ${theme.palette.success.main}25`,
                   }
                 }}
-              />
+              >
+                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
+                  <Typography variant="body2" color="textSecondary" sx={{ fontWeight: 500 }}>
+                    Total Income
+                  </Typography>
+                  <IncomeIcon sx={{ fontSize: 28, color: theme.palette.success.main, opacity: 0.8 }} />
+                </Box>
+                <Typography 
+                  variant="h5" 
+                  fontWeight={700} 
+                  sx={{ 
+                    color: theme.palette.success.main,
+                    textShadow: theme.palette.mode === 'dark' ? `0 0 20px ${theme.palette.success.main}40` : 'none'
+                  }}
+                >
+                  ₹{transactions
+                    .filter(t => t.type === 'credit')
+                    .reduce((sum, t) => sum + t.amount, 0)
+                    .toLocaleString('en-IN')}
+                </Typography>
+              </Paper>
+              
+              <Paper
+                elevation={0}
+                sx={{
+                  p: 3,
+                  borderRadius: 3,
+                  flex: { xs: '1 1 calc(50% - 12px)', md: '1 1 0' },
+                  maxWidth: { xs: 'none', md: 350 },
+                  minWidth: { xs: 150, md: 280 },
+                  border: `2px solid ${theme.palette.error.main}40`,
+                  background: theme.palette.mode === 'dark' 
+                    ? `linear-gradient(135deg, ${theme.palette.error.main}15, ${theme.palette.error.main}08)`
+                    : `linear-gradient(135deg, ${theme.palette.error.main}08, #ffffff)`,
+                  boxShadow: theme.palette.mode === 'dark'
+                    ? `0 8px 32px ${theme.palette.error.main}20`
+                    : `0 4px 20px ${theme.palette.error.main}15`,
+                  transition: 'all 0.3s ease',
+                  '&:hover': {
+                    transform: 'translateY(-4px)',
+                    boxShadow: theme.palette.mode === 'dark'
+                      ? `0 12px 40px ${theme.palette.error.main}30`
+                      : `0 8px 30px ${theme.palette.error.main}25`,
+                  }
+                }}
+              >
+                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
+                  <Typography variant="body2" color="textSecondary" sx={{ fontWeight: 500 }}>
+                    Total Expenses
+                  </Typography>
+                  <ExpenseIcon sx={{ fontSize: 28, color: theme.palette.error.main, opacity: 0.8 }} />
+                </Box>
+                <Typography 
+                  variant="h5" 
+                  fontWeight={700}
+                  sx={{ 
+                    color: theme.palette.error.main,
+                    textShadow: theme.palette.mode === 'dark' ? `0 0 20px ${theme.palette.error.main}40` : 'none'
+                  }}
+                >
+                  ₹{transactions
+                    .filter(t => t.type === 'debit')
+                    .reduce((sum, t) => sum + t.amount, 0)
+                    .toLocaleString('en-IN')}
+                </Typography>
+              </Paper>
+
+              <Paper
+                elevation={0}
+                sx={{
+                  p: 3,
+                  borderRadius: 3,
+                  flex: { xs: '1 1 100%', md: '1 1 0' },
+                  maxWidth: { xs: 'none', md: 350 },
+                  minWidth: { xs: 150, md: 280 },
+                  border: `2px solid ${theme.palette.primary.main}40`,
+                  background: theme.palette.mode === 'dark' 
+                    ? `linear-gradient(135deg, ${theme.palette.primary.main}15, ${theme.palette.primary.main}08)`
+                    : `linear-gradient(135deg, ${theme.palette.primary.main}08, #ffffff)`,
+                  boxShadow: theme.palette.mode === 'dark'
+                    ? `0 8px 32px ${theme.palette.primary.main}20`
+                    : `0 4px 20px ${theme.palette.primary.main}15`,
+                  transition: 'all 0.3s ease',
+                  '&:hover': {
+                    transform: 'translateY(-4px)',
+                    boxShadow: theme.palette.mode === 'dark'
+                      ? `0 12px 40px ${theme.palette.primary.main}30`
+                      : `0 8px 30px ${theme.palette.primary.main}25`,
+                  }
+                }}
+              >
+                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
+                  <Typography variant="body2" color="textSecondary" sx={{ fontWeight: 500 }}>
+                    Net Balance
+                  </Typography>
+                  <BalanceIcon sx={{ fontSize: 28, color: theme.palette.primary.main, opacity: 0.8 }} />
+                </Box>
+                <Typography 
+                  variant="h5" 
+                  fontWeight={700}
+                  sx={{ 
+                    color: theme.palette.primary.main,
+                    textShadow: theme.palette.mode === 'dark' ? `0 0 20px ${theme.palette.primary.main}40` : 'none'
+                  }}
+                >
+                  ₹{(transactions
+                    .filter(t => t.type === 'credit')
+                    .reduce((sum, t) => sum + t.amount, 0) -
+                    transactions
+                    .filter(t => t.type === 'debit')
+                    .reduce((sum, t) => sum + t.amount, 0))
+                    .toLocaleString('en-IN')}
+                </Typography>
+              </Paper>
             </Box>
-          </Paper>
-        </motion.div>
-
-        {/* Transaction Summary */}
-        <motion.div variants={itemVariants}>
-          <Box sx={{ display: 'flex', gap: { xs: 1, sm: 2 }, mb: { xs: 2, sm: 3 }, flexWrap: 'wrap' }}>
-            <Paper
-              elevation={0}
-              sx={{
-                p: { xs: 1.5, sm: 2 },
-                borderRadius: 2,
-                flex: 1,
-                minWidth: { xs: '100px', sm: '150px' },
-                border: `1px solid ${theme.palette.success.light}`,
-                backgroundColor: `${theme.palette.success.main}08`
-              }}
-            >
-              <Typography variant="body2" color="textSecondary" sx={{ fontSize: { xs: '0.7rem', sm: '0.875rem' } }}>Total Income</Typography>
-              <Typography variant={isMobile ? "body1" : "h6"} color="success.main" fontWeight={600} sx={{ fontSize: { xs: '0.95rem', sm: '1.25rem' } }}>
-                ₹{transactions
-                  .filter(t => t.type === 'credit')
-                  .reduce((sum, t) => sum + t.amount, 0)
-                  .toLocaleString('en-IN')}
-              </Typography>
-            </Paper>
-            
-            <Paper
-              elevation={0}
-              sx={{
-                p: { xs: 1.5, sm: 2 },
-                borderRadius: 2,
-                flex: 1,
-                minWidth: { xs: '100px', sm: '150px' },
-                border: `1px solid ${theme.palette.error.light}`,
-                backgroundColor: `${theme.palette.error.main}08`
-              }}
-            >
-              <Typography variant="body2" color="textSecondary" sx={{ fontSize: { xs: '0.7rem', sm: '0.875rem' } }}>Total Expenses</Typography>
-              <Typography variant={isMobile ? "body1" : "h6"} color="error.main" fontWeight={600} sx={{ fontSize: { xs: '0.95rem', sm: '1.25rem' } }}>
-                ₹{transactions
-                  .filter(t => t.type === 'debit')
-                  .reduce((sum, t) => sum + t.amount, 0)
-                  .toLocaleString('en-IN')}
-              </Typography>
-            </Paper>
-
-            <Paper
-              elevation={0}
-              sx={{
-                p: { xs: 1.5, sm: 2 },
-                borderRadius: 2,
-                flex: 1,
-                minWidth: { xs: '100px', sm: '150px' },
-                border: `1px solid ${theme.palette.primary.light}`,
-                backgroundColor: `${theme.palette.primary.main}08`
-              }}
-            >
-              <Typography variant="body2" color="textSecondary" sx={{ fontSize: { xs: '0.7rem', sm: '0.875rem' } }}>Net Balance</Typography>
-              <Typography variant={isMobile ? "body1" : "h6"} color="primary.main" fontWeight={600} sx={{ fontSize: { xs: '0.95rem', sm: '1.25rem' } }}>
-                ₹{(transactions
-                  .filter(t => t.type === 'credit')
-                  .reduce((sum, t) => sum + t.amount, 0) -
-                  transactions
-                  .filter(t => t.type === 'debit')
-                  .reduce((sum, t) => sum + t.amount, 0))
-                  .toLocaleString('en-IN')}
-              </Typography>
-            </Paper>
-          </Box>
-        </motion.div>
+          </motion.div>
 
         {/* Transactions Table */}
         <motion.div variants={itemVariants}>
           <Paper
-            elevation={1}
+            elevation={0}
             sx={{
-              borderRadius: { xs: 2, sm: 3 },
+              borderRadius: 3,
               overflow: 'hidden',
+              border: `1px solid ${theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)'}`,
+              background: theme.palette.mode === 'dark' 
+                ? 'linear-gradient(135deg, #1a1a2e 0%, #16213e 100%)'
+                : '#ffffff',
               boxShadow: theme.palette.mode === 'dark'
                 ? '0px 8px 32px rgba(0, 0, 0, 0.3)'
-                : '0px 8px 32px rgba(0, 0, 0, 0.08)',
+                : '0px 4px 20px rgba(0, 0, 0, 0.05)',
             }}
           >
-            <TableContainer sx={{ overflowX: 'auto' }}>
+            {/* Filters Section - Inside Table */}
+            <Box
+              sx={{
+                p: { xs: 2, sm: 2.5 },
+                borderBottom: `1px solid ${theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)'}`,
+                background: theme.palette.mode === 'dark' 
+                  ? 'rgba(255,255,255,0.02)'
+                  : 'rgba(0,0,0,0.01)',
+              }}
+            >
+              <Box sx={{ 
+                display: 'flex', 
+                gap: { xs: 1.5, sm: 2 },
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                flexWrap: { xs: 'wrap', md: 'nowrap' }
+              }}>
+                {/* Search Field - Takes more space */}
+                <TextField
+                  label="Search"
+                  placeholder="Search transactions..."
+                  variant="outlined"
+                  size="small"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  InputProps={{
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <SearchIcon sx={{ color: theme.palette.primary.main, fontSize: 20 }} />
+                      </InputAdornment>
+                    ),
+                  }}
+                  sx={{ 
+                    flex: { xs: '1 1 100%', md: '1 1 auto' },
+                    minWidth: { xs: '100%', md: 280 },
+                    '& .MuiOutlinedInput-root': {
+                      height: '44px',
+                      borderRadius: 2,
+                      backgroundColor: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.04)' : 'rgba(255,255,255,0.8)',
+                      transition: 'all 0.3s ease',
+                      '& fieldset': {
+                        borderColor: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.12)',
+                        borderWidth: '1px',
+                      },
+                      '&:hover fieldset': {
+                        borderColor: theme.palette.primary.main,
+                        borderWidth: '1px',
+                      },
+                      '&.Mui-focused': {
+                        backgroundColor: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.06)' : '#ffffff',
+                        '& fieldset': {
+                          borderColor: theme.palette.primary.main,
+                          borderWidth: '2px',
+                          boxShadow: `0 0 0 3px ${theme.palette.primary.main}15`,
+                        },
+                      },
+                    },
+                    '& .MuiInputLabel-root': {
+                      fontSize: '0.875rem',
+                      '&.Mui-focused': {
+                        color: theme.palette.primary.main,
+                      }
+                    },
+                    '& .MuiInputBase-input': {
+                      fontSize: '0.875rem',
+                      padding: '10px 12px 10px 0',
+                    },
+                  }}
+                />
+                
+                {/* Date Range Fields - Equal width, side by side */}
+                <Box sx={{ 
+                  display: 'flex', 
+                  gap: 1.5,
+                  flex: { xs: '1 1 100%', md: '0 0 auto' },
+                }}>
+                  <TextField
+                    label="From"
+                    type="date"
+                    size="small"
+                    value={fromDate}
+                    onChange={(e) => setFromDate(e.target.value)}
+                    InputLabelProps={{ shrink: true }}
+                    sx={{ 
+                      flex: 1,
+                      minWidth: { xs: 'calc(50% - 6px)', sm: 140 },
+                      maxWidth: { md: 160 },
+                      '& .MuiOutlinedInput-root': {
+                        height: '44px',
+                        borderRadius: 2,
+                        backgroundColor: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.04)' : 'rgba(255,255,255,0.8)',
+                        transition: 'all 0.3s ease',
+                        '& fieldset': {
+                          borderColor: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.12)',
+                          borderWidth: '1px',
+                        },
+                        '&:hover fieldset': {
+                          borderColor: theme.palette.primary.main,
+                          borderWidth: '1px',
+                        },
+                        '&.Mui-focused': {
+                          backgroundColor: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.06)' : '#ffffff',
+                          '& fieldset': {
+                            borderColor: theme.palette.primary.main,
+                            borderWidth: '2px',
+                            boxShadow: `0 0 0 3px ${theme.palette.primary.main}15`,
+                          },
+                        },
+                      },
+                      '& .MuiInputLabel-root': {
+                        fontSize: '0.875rem',
+                        '&.Mui-focused': {
+                          color: theme.palette.primary.main,
+                        }
+                      },
+                      '& .MuiInputBase-input': {
+                        fontSize: '0.875rem',
+                        padding: '10px 12px',
+                      },
+                    }}
+                  />
+
+                  <TextField
+                    label="To"
+                    type="date"
+                    size="small"
+                    value={toDate}
+                    onChange={(e) => setToDate(e.target.value)}
+                    InputLabelProps={{ shrink: true }}
+                    sx={{ 
+                      flex: 1,
+                      minWidth: { xs: 'calc(50% - 6px)', sm: 140 },
+                      maxWidth: { md: 160 },
+                      '& .MuiOutlinedInput-root': {
+                        height: '44px',
+                        borderRadius: 2,
+                        backgroundColor: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.04)' : 'rgba(255,255,255,0.8)',
+                        transition: 'all 0.3s ease',
+                        '& fieldset': {
+                          borderColor: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.12)',
+                          borderWidth: '1px',
+                        },
+                        '&:hover fieldset': {
+                          borderColor: theme.palette.primary.main,
+                          borderWidth: '1px',
+                        },
+                        '&.Mui-focused': {
+                          backgroundColor: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.06)' : '#ffffff',
+                          '& fieldset': {
+                            borderColor: theme.palette.primary.main,
+                            borderWidth: '2px',
+                            boxShadow: `0 0 0 3px ${theme.palette.primary.main}15`,
+                          },
+                        },
+                      },
+                      '& .MuiInputLabel-root': {
+                        fontSize: '0.875rem',
+                        '&.Mui-focused': {
+                          color: theme.palette.primary.main,
+                        }
+                      },
+                      '& .MuiInputBase-input': {
+                        fontSize: '0.875rem',
+                        padding: '10px 12px',
+                      },
+                    }}
+                  />
+                </Box>
+
+                {/* Download Button - Compact with icon */}
+                <Button
+                  variant="contained"
+                  startIcon={<DownloadIcon sx={{ fontSize: 18 }} />}
+                  onClick={handleDownload}
+                  disabled={filteredTransactions.length === 0}
+                  sx={{
+                    height: 44,
+                    px: { xs: 2, sm: 2.5 },
+                    minWidth: { xs: 'auto', sm: 110 },
+                    borderRadius: 2,
+                    textTransform: 'none',
+                    fontSize: '0.875rem',
+                    fontWeight: 600,
+                    flex: { xs: '1 1 100%', md: '0 0 auto' },
+                    background: theme.palette.mode === 'dark'
+                      ? `linear-gradient(135deg, ${theme.palette.primary.main}, ${theme.palette.primary.dark})`
+                      : theme.palette.primary.main,
+                    boxShadow: `0 4px 12px ${theme.palette.primary.main}30`,
+                    '&:hover': {
+                      background: theme.palette.mode === 'dark'
+                        ? `linear-gradient(135deg, ${theme.palette.primary.dark}, ${theme.palette.primary.main})`
+                        : theme.palette.primary.dark,
+                      boxShadow: `0 6px 20px ${theme.palette.primary.main}50, 0 0 30px ${theme.palette.primary.main}20`,
+                      transform: 'translateY(-2px)',
+                    },
+                    '&:active': {
+                      transform: 'translateY(0)',
+                    },
+                    '&:disabled': {
+                      opacity: 0.4,
+                      background: theme.palette.action.disabledBackground,
+                    },
+                    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                  }}
+                >
+                  {isMobile ? 'CSV' : 'Download'}
+                </Button>
+              </Box>
+            </Box>
+
+            <TableContainer>
               <Table 
                 sx={{ 
-                  minWidth: { xs: 300, sm: 650 },
-                  tableLayout: 'auto',
+                  minWidth: 650,
                   '& .MuiTableCell-root': {
-                    borderBottom: `1px solid ${theme.palette.divider}`,
-                    padding: { xs: '8px 4px', sm: '16px 12px' },
-                    fontSize: { xs: '0.75rem', sm: '0.875rem' }
+                    borderBottom: `1px solid ${theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)'}`,
+                    padding: '20px 16px',
                   }
                 }}
               >
                 <TableHead>
-                  <TableRow sx={{ backgroundColor: theme.palette.mode === 'dark' ? '#2a2a3e' : '#f5f5f5' }}>
+                  <TableRow sx={{ 
+                    background: theme.palette.mode === 'dark' 
+                      ? 'rgba(255,255,255,0.03)' 
+                      : 'rgba(0,0,0,0.02)' 
+                  }}>
                     <TableCell 
                       sx={{ 
-                        width: { xs: '70px', sm: '120px' },
-                        minWidth: { xs: '70px', sm: '120px' },
-                        fontWeight: 600,
-                        fontSize: { xs: '0.7rem', sm: '0.875rem' },
-                        letterSpacing: '0.5px'
+                        fontWeight: 700,
+                        fontSize: '0.875rem',
+                        letterSpacing: '0.5px',
+                        color: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.9)' : 'rgba(0,0,0,0.87)',
+                        textTransform: 'uppercase',
                       }}
                     >
                       Date
                     </TableCell>
                     <TableCell 
                       sx={{ 
-                        width: { xs: '35%', sm: '45%' },
-                        minWidth: { xs: '120px', sm: '220px' },
-                        fontWeight: 600,
-                        fontSize: { xs: '0.7rem', sm: '0.875rem' },
-                        letterSpacing: '0.5px'
+                        fontWeight: 700,
+                        fontSize: '0.875rem',
+                        letterSpacing: '0.5px',
+                        color: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.9)' : 'rgba(0,0,0,0.87)',
+                        textTransform: 'uppercase',
                       }}
                     >
                       Description
@@ -364,11 +610,11 @@ const Passbook: React.FC = () => {
                     <TableCell 
                       align="right" 
                       sx={{ 
-                        width: { xs: '80px', sm: '130px' },
-                        minWidth: { xs: '80px', sm: '130px' },
-                        fontWeight: 600,
-                        fontSize: { xs: '0.7rem', sm: '0.875rem' },
-                        letterSpacing: '0.5px'
+                        fontWeight: 700,
+                        fontSize: '0.875rem',
+                        letterSpacing: '0.5px',
+                        color: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.9)' : 'rgba(0,0,0,0.87)',
+                        textTransform: 'uppercase',
                       }}
                     >
                       Amount
@@ -376,30 +622,30 @@ const Passbook: React.FC = () => {
                     <TableCell 
                       align="right" 
                       sx={{ 
-                        width: { xs: '80px', sm: '130px' },
-                        minWidth: { xs: '80px', sm: '130px' },
-                        fontWeight: 600,
-                        fontSize: { xs: '0.7rem', sm: '0.875rem' },
+                        fontWeight: 700,
+                        fontSize: '0.875rem',
                         letterSpacing: '0.5px',
-                        display: { xs: 'none', sm: 'table-cell' }
+                        color: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.9)' : 'rgba(0,0,0,0.87)',
+                        textTransform: 'uppercase',
+                        display: { xs: 'none', md: 'table-cell' }
                       }}
                     >
                       Balance
                     </TableCell>
                     <TableCell 
                       onClick={handleTypeColumnClick}
+                      align="right"
                       sx={{ 
-                        width: { xs: '70px', sm: '110px' },
-                        minWidth: { xs: '70px', sm: '110px' },
                         cursor: 'pointer',
                         userSelect: 'none',
-                        fontWeight: 600,
-                        fontSize: { xs: '0.7rem', sm: '0.875rem' },
+                        fontWeight: 700,
+                        fontSize: '0.875rem',
                         letterSpacing: '0.5px',
+                        color: filterType !== 'all' ? theme.palette.primary.main : theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.9)' : 'rgba(0,0,0,0.87)',
+                        textTransform: 'uppercase',
                         '&:hover': {
-                          backgroundColor: theme.palette.primary.main + '15',
+                          backgroundColor: theme.palette.mode === 'dark' ? 'rgba(156, 39, 176, 0.15)' : 'rgba(156, 39, 176, 0.08)',
                         },
-                        color: filterType !== 'all' ? theme.palette.primary.main : 'inherit',
                         transition: 'all 0.2s ease'
                       }}
                     >
@@ -410,10 +656,15 @@ const Passbook: React.FC = () => {
                 <TableBody>
                   {filteredTransactions.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={5} align="center" sx={{ py: 4 }}>
-                        <Typography variant="body2" color="textSecondary">
-                          No transactions found. {searchTerm && `Try adjusting your search for "${searchTerm}".`}
+                      <TableCell colSpan={5} align="center" sx={{ py: 8 }}>
+                        <Typography variant="h6" color="textSecondary" sx={{ mb: 1 }}>
+                          No transactions found
                         </Typography>
+                        {searchTerm && (
+                          <Typography variant="body2" color="textSecondary">
+                            Try adjusting your search or date range
+                          </Typography>
+                        )}
                       </TableCell>
                     </TableRow>
                   ) : (
@@ -424,25 +675,33 @@ const Passbook: React.FC = () => {
                           key={transaction.id}
                           sx={{
                             '&:hover': {
-                              backgroundColor: theme.palette.mode === 'dark' ? '#2a2a3e15' : '#f5f5f515'
+                              backgroundColor: theme.palette.mode === 'dark' 
+                                ? 'rgba(255,255,255,0.05)' 
+                                : 'rgba(0,0,0,0.02)',
+                              transition: 'background-color 0.2s ease',
                             },
-                            '&:nth-of-type(even)': {
-                              backgroundColor: theme.palette.mode === 'dark' ? '#1a1a2e08' : '#f8f9fa50'
-                            }
+                            transition: 'background-color 0.2s ease',
                           }}
                         >
-                          <TableCell sx={{ fontSize: { xs: '0.7rem', sm: '0.875rem' } }}>
-                            <Typography variant="body2" fontWeight={400} sx={{ fontFamily: 'monospace', fontSize: { xs: '0.7rem', sm: '0.875rem' } }}>
+                          <TableCell>
+                            <Typography 
+                              variant="body2" 
+                              fontWeight={500} 
+                              sx={{ 
+                                fontFamily: 'monospace',
+                                color: theme.palette.text.secondary,
+                              }}
+                            >
                               {formatDate(transaction.date)}
                             </Typography>
                           </TableCell>
                           <TableCell>
                             <Box>
-                              <Typography variant="body2" fontWeight={500} sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' }, mb: 0.5 }}>
+                              <Typography variant="body1" fontWeight={600} sx={{ mb: 0.5 }}>
                                 {transaction.source || transaction.category}
                               </Typography>
-                              {transaction.notes && !isMobile && (
-                                <Typography variant="caption" color="textSecondary" sx={{ fontSize: { xs: '0.65rem', sm: '0.75rem' } }}>
+                              {transaction.notes && (
+                                <Typography variant="caption" color="textSecondary">
                                   {transaction.notes}
                                 </Typography>
                               )}
@@ -450,35 +709,43 @@ const Passbook: React.FC = () => {
                           </TableCell>
                           <TableCell align="right">
                             <Typography
-                              variant="body2"
-                              fontWeight={600}
-                              color={transaction.type === 'credit' ? 'success.main' : 'error.main'}
-                              sx={{ fontFamily: 'monospace', fontSize: { xs: '0.75rem', sm: '0.875rem' } }}
+                              variant="body1"
+                              fontWeight={700}
+                              sx={{ 
+                                fontFamily: 'monospace',
+                                color: transaction.type === 'credit' ? theme.palette.success.main : theme.palette.error.main,
+                                textShadow: theme.palette.mode === 'dark' 
+                                  ? transaction.type === 'credit'
+                                    ? `0 0 10px ${theme.palette.success.main}40`
+                                    : `0 0 10px ${theme.palette.error.main}40`
+                                  : 'none',
+                              }}
                             >
                               {transaction.type === 'credit' ? '+' : '-'}{formatAmount(transaction.amount)}
                             </Typography>
                           </TableCell>
-                          <TableCell align="right" sx={{ display: { xs: 'none', sm: 'table-cell' } }}>
+                          <TableCell align="right" sx={{ display: { xs: 'none', md: 'table-cell' } }}>
                             <Typography 
-                              variant="body2" 
-                              fontWeight={500} 
-                              sx={{ fontFamily: 'monospace', fontSize: '0.875rem' }}
+                              variant="body1" 
+                              fontWeight={600} 
+                              sx={{ 
+                                fontFamily: 'monospace',
+                                color: theme.palette.text.primary,
+                              }}
                             >
                               ₹{getRunningBalance(actualIndex).toLocaleString('en-IN')}
                             </Typography>
                           </TableCell>
-                          <TableCell>
+                          <TableCell align="right">
                             <Chip
-                              icon={isMobile ? undefined : (transaction.type === 'credit' ? <IncomeIcon /> : <ExpenseIcon />)}
-                              label={isMobile ? (transaction.type === 'credit' ? 'In' : 'Out') : (transaction.type === 'credit' ? 'Income' : 'Expense')}
+                              icon={transaction.type === 'credit' ? <IncomeIcon /> : <ExpenseIcon />}
+                              label={transaction.type === 'credit' ? 'Income' : 'Expense'}
                               size="small"
                               color={transaction.type === 'credit' ? 'success' : 'error'}
                               variant="outlined"
                               sx={{ 
-                                fontSize: { xs: '0.65rem', sm: '0.75rem' }, 
-                                fontWeight: 500,
-                                minWidth: { xs: '45px', sm: '85px' },
-                                height: { xs: '20px', sm: '24px' }
+                                fontWeight: 600,
+                                borderWidth: 2,
                               }}
                             />
                           </TableCell>
@@ -499,59 +766,78 @@ const Passbook: React.FC = () => {
               display: 'flex', 
               justifyContent: 'space-between', 
               alignItems: 'center',
-              mt: { xs: 2, sm: 3 },
-              px: { xs: 0, sm: 2 },
-              flexDirection: { xs: 'column', sm: 'row' },
-              gap: { xs: 2, sm: 0 }
+              mt: 4,
+              px: 2,
             }}>
               <Button
                 onClick={handlePreviousPage}
                 disabled={currentPage === 1}
                 startIcon={<ArrowBackIcon />}
                 variant="outlined"
-                size={isMobile ? "small" : "medium"}
                 sx={{ 
-                  minWidth: { xs: '100%', sm: 120 },
+                  minWidth: 120,
+                  height: 48,
+                  borderRadius: 2,
+                  borderWidth: 2,
+                  fontWeight: 600,
+                  '&:hover': {
+                    borderWidth: 2,
+                    transform: 'translateX(-4px)',
+                  },
                   '&:disabled': {
-                    opacity: 0.5
-                  }
+                    opacity: 0.3
+                  },
+                  transition: 'all 0.3s ease',
                 }}
               >
                 Previous
               </Button>
               
-              <Box sx={{ 
-                display: 'flex', 
-                alignItems: 'center', 
-                gap: 2,
-                backgroundColor: theme.palette.background.paper,
-                px: { xs: 2, sm: 3 },
-                py: { xs: 0.5, sm: 1 },
-                borderRadius: 2,
-                border: `1px solid ${theme.palette.divider}`
-              }}>
-                <Typography variant="body2" color="text.secondary" sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>
+              <Paper
+                elevation={0}
+                sx={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  gap: 2,
+                  px: 3,
+                  py: 1.5,
+                  borderRadius: 2,
+                  border: `2px solid ${theme.palette.primary.main}40`,
+                  background: theme.palette.mode === 'dark' 
+                    ? `linear-gradient(135deg, ${theme.palette.primary.main}15, ${theme.palette.primary.main}08)`
+                    : `${theme.palette.primary.main}08`,
+                }}
+              >
+                <Typography variant="body2" color="text.secondary" fontWeight={500}>
                   Page
                 </Typography>
-                <Typography variant="body1" fontWeight={600} color="primary.main" sx={{ fontSize: { xs: '0.9rem', sm: '1rem' } }}>
+                <Typography variant="h6" fontWeight={700} color="primary.main">
                   {currentPage}
                 </Typography>
-                <Typography variant="body2" color="text.secondary" sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>
+                <Typography variant="body2" color="text.secondary" fontWeight={500}>
                   of {totalPages}
                 </Typography>
-              </Box>
+              </Paper>
               
               <Button
                 onClick={handleNextPage}
                 disabled={currentPage === totalPages}
                 endIcon={<ArrowBackIcon sx={{ transform: 'rotate(180deg)' }} />}
                 variant="outlined"
-                size={isMobile ? "small" : "medium"}
                 sx={{ 
-                  minWidth: { xs: '100%', sm: 120 },
+                  minWidth: 120,
+                  height: 48,
+                  borderRadius: 2,
+                  borderWidth: 2,
+                  fontWeight: 600,
+                  '&:hover': {
+                    borderWidth: 2,
+                    transform: 'translateX(4px)',
+                  },
                   '&:disabled': {
-                    opacity: 0.5
-                  }
+                    opacity: 0.3
+                  },
+                  transition: 'all 0.3s ease',
                 }}
               >
                 Next
@@ -566,28 +852,41 @@ const Passbook: React.FC = () => {
             <Paper
               elevation={0}
               sx={{
-                p: 2,
-                mt: 3,
-                borderRadius: 2,
+                p: 3,
+                mt: 4,
+                borderRadius: 3,
                 textAlign: 'center',
-                border: `1px solid ${theme.palette.divider}`,
-                backgroundColor: theme.palette.mode === 'dark' ? '#1a1a2e' : '#f9f9f9'
+                border: `1px solid ${theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)'}`,
+                background: theme.palette.mode === 'dark' 
+                  ? 'linear-gradient(135deg, #1a1a2e 0%, #16213e 100%)'
+                  : 'linear-gradient(135deg, #ffffff 0%, #f8f9ff 100%)',
               }}
             >
-              <Typography variant="body2" color="textSecondary">
+              <Typography variant="body2" color="textSecondary" fontWeight={500}>
                 Showing {startIndex + 1}-{Math.min(startIndex + itemsPerPage, filteredTransactions.length)} of {filteredTransactions.length} transactions
-                {searchTerm && ` for "${searchTerm}"`}
-                {filterType !== 'all' && ` (${filterType === 'credit' ? 'Income' : 'Expense'} only)`}
-                {filteredTransactions.length !== transactions.length && ` • Total: ${transactions.length}`}
+                {(searchTerm || fromDate || toDate) && (
+                  <Box component="span" sx={{ display: 'block', mt: 1, color: theme.palette.primary.main }}>
+                    {searchTerm && ` • Search: "${searchTerm}"`}
+                    {fromDate && ` • From: ${new Date(fromDate).toLocaleDateString('en-IN')}`}
+                    {toDate && ` • To: ${new Date(toDate).toLocaleDateString('en-IN')}`}
+                  </Box>
+                )}
+                {filterType !== 'all' && (
+                  <Box component="span" sx={{ display: 'block', mt: 0.5, color: theme.palette.primary.main }}>
+                    {` • ${filterType === 'credit' ? 'Income' : 'Expense'} only`}
+                  </Box>
+                )}
+                {filteredTransactions.length !== transactions.length && (
+                  <Box component="span" sx={{ display: 'block', mt: 0.5, opacity: 0.7 }}>
+                    {` Total: ${transactions.length} transactions`}
+                  </Box>
+                )}
               </Typography>
             </Paper>
           </motion.div>
         )}
-      </motion.div>
-
-
-
-
+        </motion.div>
+      </Box>
     </Container>
   );
 };
