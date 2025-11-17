@@ -14,6 +14,7 @@ import {
   FormHelperText,
   useTheme
 } from '@mui/material';
+import useMediaQuery from '@mui/material/useMediaQuery';
 import { motion } from 'framer-motion';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
@@ -26,12 +27,15 @@ import {
 } from '@mui/icons-material';
 import { Link, useNavigate } from 'react-router-dom';
 import { useTransactions } from '../context/TransactionContext';
+import { useLanguage } from '../context/LanguageContext';
 import ExpenseSavedModal from '../components/ExpenseSavedModal';
 
 const AddDebit: React.FC = () => {
   const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const navigate = useNavigate();
   const { addTransaction } = useTransactions();
+  const { t } = useLanguage();
   
   const categories = ['Food', 'Transport', 'Shopping', 'Bills', 'Entertainment', 'Health', 'Others'];
   
@@ -146,7 +150,7 @@ const AddDebit: React.FC = () => {
   };
 
   return (
-    <Container maxWidth="md" sx={{ py: 4 }}>
+    <Container maxWidth="md" sx={{ py: { xs: 2, sm: 4 }, px: { xs: 2, sm: 3 } }}>
       <motion.div
         variants={containerVariants}
         initial="hidden"
@@ -154,18 +158,19 @@ const AddDebit: React.FC = () => {
       >
         {/* Header Section */}
         <motion.div variants={itemVariants}>
-          <Box sx={{ mb: 4, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+          <Box sx={{ mb: { xs: 3, sm: 4 }, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexDirection: { xs: 'column', sm: 'row' }, gap: { xs: 2, sm: 0 } }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', width: { xs: '100%', sm: 'auto' } }}>
               <Button 
                 component={Link} 
                 to="/" 
                 startIcon={<ArrowBackIcon />}
-                sx={{ mr: 3 }}
+                sx={{ mr: { xs: 2, sm: 3 } }}
                 variant="outlined"
+                size={isMobile ? "small" : "medium"}
               >
-                Back to Dashboard
+                {isMobile ? 'Back' : 'Back to Dashboard'}
               </Button>
-              <Typography variant="h4" sx={{ fontWeight: 'bold', color: theme.palette.error.main }}>
+              <Typography variant={isMobile ? "h5" : "h4"} sx={{ fontWeight: 'bold', color: '#9c27b0' }}>
                 Add Expense
               </Typography>
             </Box>
@@ -177,27 +182,25 @@ const AddDebit: React.FC = () => {
           <Paper
             elevation={1}
             sx={{
-              p: 4,
-              borderRadius: 4,
+              p: { xs: 2, sm: 4 },
+              borderRadius: { xs: 3, sm: 4 },
               boxShadow: theme.palette.mode === 'dark' 
                 ? '0px 8px 32px rgba(0, 0, 0, 0.3)' 
                 : '0px 8px 32px rgba(0, 0, 0, 0.08)',
               border: `1px solid ${theme.palette.divider}`,
-              mb: 4,
-              background: theme.palette.mode === 'dark' 
-                ? 'linear-gradient(135deg, #2e1a1a 0%, #3e1616 100%)'
-                : 'linear-gradient(135deg, #ffffff 0%, #fff8f8 100%)'
+              mb: { xs: 3, sm: 4 }
             }}
           >
-            <Typography variant="h6" sx={{ mb: 3, fontWeight: 600, color: theme.palette.text.primary }}>
+            <Typography variant="h6" sx={{ mb: { xs: 2, sm: 3 }, fontWeight: 600, color: theme.palette.text.primary, fontSize: { xs: '1.1rem', sm: '1.25rem' } }}>
               Expense Information
             </Typography>
             
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: { xs: 2, sm: 3 } }}>
               <TextField
                 label="Amount"
                 placeholder="0.00"
                 fullWidth
+                size={isMobile ? "small" : "medium"}
                 value={amount}
                 onChange={(e) => {
                   const value = e.target.value;
@@ -243,7 +246,8 @@ const AddDebit: React.FC = () => {
               />
               
               <FormControl 
-                fullWidth 
+                fullWidth
+                size={isMobile ? "small" : "medium"}
                 error={!!categoryError}
                 sx={{
                   '& .MuiOutlinedInput-root': {
@@ -287,6 +291,7 @@ const AddDebit: React.FC = () => {
                   label="Custom Category"
                   placeholder="Enter your custom category name"
                   fullWidth
+                  size={isMobile ? "small" : "medium"}
                   value={customCategory}
                   onChange={(e) => setCustomCategory(e.target.value)}
                   error={!!customCategoryError}
@@ -349,8 +354,9 @@ const AddDebit: React.FC = () => {
                 label="Additional Notes"
                 placeholder="Any additional details about this expense..."
                 fullWidth
+                size={isMobile ? "small" : "medium"}
                 multiline
-                rows={4}
+                rows={isMobile ? 3 : 4}
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
                 helperText="Optional: Add any notes or description"
@@ -371,15 +377,16 @@ const AddDebit: React.FC = () => {
               />
             </Box>
             
-            <Box sx={{ mt: 4, display: 'flex', gap: 2 }}>
+            <Box sx={{ mt: { xs: 3, sm: 4 }, display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, gap: 2 }}>
               <Button 
                 variant="outlined" 
                 color="inherit" 
-                size="large"
+                size={isMobile ? "medium" : "large"}
                 component={Link}
                 to="/"
+                fullWidth={isMobile}
                 sx={{ 
-                  flex: 1,
+                  flex: { xs: 'none', sm: 1 },
                   py: 1.5, 
                   borderRadius: 2,
                 }}
@@ -388,17 +395,20 @@ const AddDebit: React.FC = () => {
               </Button>
               <Button 
                 variant="contained" 
-                color="error" 
-                size="large"
+                size={isMobile ? "medium" : "large"}
                 onClick={handleSubmit}
+                fullWidth={isMobile}
                 sx={{ 
-                  flex: 2,
+                  flex: { xs: 'none', sm: 2 },
                   py: 1.5, 
                   borderRadius: 2,
-                  boxShadow: `0px 8px 16px ${theme.palette.error.main}40`,
+                  backgroundColor: '#d32f2f',
+                  color: '#fff',
+                  boxShadow: '0px 8px 16px rgba(211, 47, 47, 0.25)',
                   '&:hover': {
+                    backgroundColor: '#b71c1c',
                     transform: 'translateY(-2px)',
-                    boxShadow: `0px 10px 20px ${theme.palette.error.main}60`,
+                    boxShadow: '0px 10px 20px rgba(211, 47, 47, 0.38)',
                   }
                 }}
               >
@@ -413,17 +423,17 @@ const AddDebit: React.FC = () => {
           <Paper
             elevation={0}
             sx={{
-              p: 3,
-              borderRadius: 3,
+              p: { xs: 2, sm: 3 },
+              borderRadius: { xs: 2, sm: 3 },
               border: `1px solid ${theme.palette.error.light}`,
               backgroundColor: `${theme.palette.error.main}08`,
               textAlign: 'center'
             }}
           >
-            <Typography variant="h6" sx={{ mb: 1, color: theme.palette.error.dark, fontWeight: 600 }}>
+            <Typography variant={isMobile ? "subtitle1" : "h6"} sx={{ mb: 1, color: theme.palette.error.dark, fontWeight: 600 }}>
               💡 Pro Tip
             </Typography>
-            <Typography variant="body2" color="textSecondary">
+            <Typography variant={isMobile ? "caption" : "body2"} color="textSecondary">
               Categorize your expenses to track spending patterns and identify areas for savings.
               Detailed expense tracking is the key to effective budgeting and financial control!
             </Typography>

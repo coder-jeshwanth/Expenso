@@ -7,7 +7,8 @@ import {
   TextField, 
   Button, 
   InputAdornment,
-  useTheme
+  useTheme,
+  useMediaQuery
 } from '@mui/material';
 import { motion } from 'framer-motion';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
@@ -21,12 +22,15 @@ import {
 } from '@mui/icons-material';
 import { Link, useNavigate } from 'react-router-dom';
 import { useTransactions } from '../context/TransactionContext';
+import { useLanguage } from '../context/LanguageContext';
 import CreditSavedModal from '../components/CreditSavedModal';
 
 const AddCredit: React.FC = () => {
   const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const navigate = useNavigate();
   const { addTransaction } = useTransactions();
+  const { t } = useLanguage();
   
   const [source, setSource] = useState<string>('');
   const [amount, setAmount] = useState<string>('');
@@ -119,7 +123,7 @@ const AddCredit: React.FC = () => {
   };
 
   return (
-    <Container maxWidth="md" sx={{ py: 4 }}>
+    <Container maxWidth="md" sx={{ py: { xs: 2, sm: 4 }, px: { xs: 2, sm: 3 } }}>
       <motion.div
         variants={containerVariants}
         initial="hidden"
@@ -127,18 +131,19 @@ const AddCredit: React.FC = () => {
       >
         {/* Header Section */}
         <motion.div variants={itemVariants}>
-          <Box sx={{ mb: 4, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+          <Box sx={{ mb: { xs: 3, sm: 4 }, display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, alignItems: { xs: 'flex-start', sm: 'center' }, justifyContent: 'space-between', gap: { xs: 2, sm: 0 } }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', width: { xs: '100%', sm: 'auto' } }}>
               <Button 
                 component={Link} 
                 to="/" 
                 startIcon={<ArrowBackIcon />}
-                sx={{ mr: 3 }}
+                sx={{ mr: { xs: 2, sm: 3 } }}
                 variant="outlined"
+                size={isMobile ? "small" : "medium"}
               >
                 Back to Dashboard
               </Button>
-              <Typography variant="h4" sx={{ fontWeight: 'bold', color: theme.palette.primary.main }}>
+              <Typography variant={isMobile ? "h5" : "h4"} sx={{ fontWeight: 'bold', color: theme.palette.primary.main }}>
                 Add Credit
               </Typography>
             </Box>
@@ -150,8 +155,8 @@ const AddCredit: React.FC = () => {
           <Paper
             elevation={1}
             sx={{
-              p: 4,
-              borderRadius: 4,
+              p: { xs: 2.5, sm: 4 },
+              borderRadius: { xs: 3, sm: 4 },
               boxShadow: theme.palette.mode === 'dark' 
                 ? '0px 8px 32px rgba(0, 0, 0, 0.3)' 
                 : '0px 8px 32px rgba(0, 0, 0, 0.08)',
@@ -162,15 +167,16 @@ const AddCredit: React.FC = () => {
                 : 'linear-gradient(135deg, #ffffff 0%, #f8f9ff 100%)'
             }}
           >
-            <Typography variant="h6" sx={{ mb: 3, fontWeight: 600, color: theme.palette.text.primary }}>
+            <Typography variant={isMobile ? "subtitle1" : "h6"} sx={{ mb: { xs: 2, sm: 3 }, fontWeight: 600, color: theme.palette.text.primary }}>
               Credit Information
             </Typography>
             
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: { xs: 2, sm: 3 } }}>
               <TextField
                 label="Income Source"
                 placeholder="e.g., Salary, Freelance, Investment"
                 fullWidth
+                size={isMobile ? "small" : "medium"}
                 value={source}
                 onChange={(e) => setSource(e.target.value)}
                 error={!!sourceError}
@@ -202,6 +208,7 @@ const AddCredit: React.FC = () => {
                 label="Amount"
                 placeholder="0.00"
                 fullWidth
+                size={isMobile ? "small" : "medium"}
                 value={amount}
                 onChange={(e) => {
                   const value = e.target.value;
@@ -286,8 +293,9 @@ const AddCredit: React.FC = () => {
                 label="Additional Notes"
                 placeholder="Any additional details about this income..."
                 fullWidth
+                size={isMobile ? "small" : "medium"}
                 multiline
-                rows={4}
+                rows={isMobile ? 3 : 4}
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
                 helperText="Optional: Add any notes or description"
@@ -308,16 +316,17 @@ const AddCredit: React.FC = () => {
               />
             </Box>
             
-            <Box sx={{ mt: 4, display: 'flex', gap: 2 }}>
+            <Box sx={{ mt: { xs: 3, sm: 4 }, display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, gap: 2 }}>
               <Button 
                 variant="outlined" 
                 color="inherit" 
-                size="large"
+                size={isMobile ? "medium" : "large"}
                 component={Link}
                 to="/"
+                fullWidth={isMobile}
                 sx={{ 
-                  flex: 1,
-                  py: 1.5, 
+                  flex: { sm: 1 },
+                  py: { xs: 1.2, sm: 1.5 }, 
                   borderRadius: 2,
                 }}
               >
@@ -326,11 +335,12 @@ const AddCredit: React.FC = () => {
               <Button 
                 variant="contained" 
                 color="success" 
-                size="large"
+                size={isMobile ? "medium" : "large"}
                 onClick={handleSubmit}
+                fullWidth={isMobile}
                 sx={{ 
-                  flex: 2,
-                  py: 1.5, 
+                  flex: { sm: 2 },
+                  py: { xs: 1.2, sm: 1.5 }, 
                   borderRadius: 2,
                   boxShadow: `0px 8px 16px ${theme.palette.success.main}40`,
                   '&:hover': {
@@ -350,17 +360,17 @@ const AddCredit: React.FC = () => {
           <Paper
             elevation={0}
             sx={{
-              p: 3,
-              borderRadius: 3,
+              p: { xs: 2, sm: 3 },
+              borderRadius: { xs: 2, sm: 3 },
               border: `1px solid ${theme.palette.success.light}`,
               backgroundColor: `${theme.palette.success.main}08`,
               textAlign: 'center'
             }}
           >
-            <Typography variant="h6" sx={{ mb: 1, color: theme.palette.success.dark, fontWeight: 600 }}>
+            <Typography variant={isMobile ? "subtitle1" : "h6"} sx={{ mb: 1, color: theme.palette.success.dark, fontWeight: 600 }}>
               💡 Pro Tip
             </Typography>
-            <Typography variant="body2" color="textSecondary">
+            <Typography variant={isMobile ? "caption" : "body2"} color="textSecondary">
               Track all your income sources to get a complete picture of your financial health.
               Regular income tracking helps in better budgeting and financial planning!
             </Typography>

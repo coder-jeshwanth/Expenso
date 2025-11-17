@@ -1,3 +1,4 @@
+
 export type TransactionType = 'credit' | 'debit';
 
 export interface Transaction {

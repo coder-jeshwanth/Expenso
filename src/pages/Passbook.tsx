@@ -22,6 +22,7 @@ import {
   Divider,
   useTheme
 } from '@mui/material';
+import useMediaQuery from '@mui/material/useMediaQuery';
 import {
   ArrowBack as ArrowBackIcon,
   TrendingUp as IncomeIcon,
@@ -33,9 +34,11 @@ import {
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { useTransactions } from '../context/TransactionContext';
+import { useLanguage } from '../context/LanguageContext';
 
 const Passbook: React.FC = () => {
   const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const { transactions } = useTransactions();
   
   const [searchTerm, setSearchTerm] = useState('');
@@ -152,7 +155,7 @@ const Passbook: React.FC = () => {
   }, [searchTerm, filterType]);
 
   return (
-    <Container maxWidth="lg" sx={{ py: 4 }}>
+    <Container maxWidth="lg" sx={{ py: { xs: 2, sm: 4 }, px: { xs: 1, sm: 3 } }}>
       <motion.div
         variants={containerVariants}
         initial="hidden"
@@ -160,22 +163,23 @@ const Passbook: React.FC = () => {
       >
         {/* Header Section */}
         <motion.div variants={itemVariants}>
-          <Box sx={{ mb: 4, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+          <Box sx={{ mb: { xs: 2, sm: 4 }, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexDirection: { xs: 'column', sm: 'row' }, gap: { xs: 2, sm: 0 } }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', width: { xs: '100%', sm: 'auto' } }}>
               <Button 
                 component={Link} 
                 to="/" 
                 startIcon={<ArrowBackIcon />}
-                sx={{ mr: 3 }}
+                sx={{ mr: { xs: 2, sm: 3 } }}
                 variant="outlined"
+                size={isMobile ? "small" : "medium"}
               >
-                Back to Dashboard
+                {isMobile ? 'Back' : 'Back to Dashboard'}
               </Button>
-              <Typography variant="h4" sx={{ fontWeight: 'bold', color: theme.palette.primary.main }}>
+              <Typography variant={isMobile ? "h5" : "h4"} sx={{ fontWeight: 'bold', color: theme.palette.primary.main }}>
                 Passbook
               </Typography>
             </Box>
-            <Box sx={{ display: 'flex', gap: 1 }}>
+            <Box sx={{ display: { xs: 'none', sm: 'flex' }, gap: 1 }}>
               <IconButton
                 sx={{ 
                   border: `1px solid ${theme.palette.divider}`,
@@ -193,9 +197,9 @@ const Passbook: React.FC = () => {
           <Paper
             elevation={1}
             sx={{
-              p: 3,
-              borderRadius: 3,
-              mb: 3,
+              p: { xs: 2, sm: 3 },
+              borderRadius: { xs: 2, sm: 3 },
+              mb: { xs: 2, sm: 3 },
               background: theme.palette.mode === 'dark' 
                 ? 'linear-gradient(135deg, #1a1a2e 0%, #16213e 100%)'
                 : 'linear-gradient(135deg, #ffffff 0%, #f8f9ff 100%)'
@@ -204,8 +208,9 @@ const Passbook: React.FC = () => {
             <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', alignItems: 'center' }}>
               <TextField
                 label="Search transactions"
-                placeholder="Search by amount, category, notes, or source..."
+                placeholder={isMobile ? "Search..." : "Search by amount, category, notes, or source..."}
                 variant="outlined"
+                size={isMobile ? "small" : "medium"}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 InputProps={{
@@ -242,20 +247,20 @@ const Passbook: React.FC = () => {
 
         {/* Transaction Summary */}
         <motion.div variants={itemVariants}>
-          <Box sx={{ display: 'flex', gap: 2, mb: 3, flexWrap: 'wrap' }}>
+          <Box sx={{ display: 'flex', gap: { xs: 1, sm: 2 }, mb: { xs: 2, sm: 3 }, flexWrap: 'wrap' }}>
             <Paper
               elevation={0}
               sx={{
-                p: 2,
+                p: { xs: 1.5, sm: 2 },
                 borderRadius: 2,
                 flex: 1,
-                minWidth: 150,
+                minWidth: { xs: '100px', sm: '150px' },
                 border: `1px solid ${theme.palette.success.light}`,
                 backgroundColor: `${theme.palette.success.main}08`
               }}
             >
-              <Typography variant="body2" color="textSecondary">Total Income</Typography>
-              <Typography variant="h6" color="success.main" fontWeight={600}>
+              <Typography variant="body2" color="textSecondary" sx={{ fontSize: { xs: '0.7rem', sm: '0.875rem' } }}>Total Income</Typography>
+              <Typography variant={isMobile ? "body1" : "h6"} color="success.main" fontWeight={600} sx={{ fontSize: { xs: '0.95rem', sm: '1.25rem' } }}>
                 ₹{transactions
                   .filter(t => t.type === 'credit')
                   .reduce((sum, t) => sum + t.amount, 0)
@@ -266,16 +271,16 @@ const Passbook: React.FC = () => {
             <Paper
               elevation={0}
               sx={{
-                p: 2,
+                p: { xs: 1.5, sm: 2 },
                 borderRadius: 2,
                 flex: 1,
-                minWidth: 150,
+                minWidth: { xs: '100px', sm: '150px' },
                 border: `1px solid ${theme.palette.error.light}`,
                 backgroundColor: `${theme.palette.error.main}08`
               }}
             >
-              <Typography variant="body2" color="textSecondary">Total Expenses</Typography>
-              <Typography variant="h6" color="error.main" fontWeight={600}>
+              <Typography variant="body2" color="textSecondary" sx={{ fontSize: { xs: '0.7rem', sm: '0.875rem' } }}>Total Expenses</Typography>
+              <Typography variant={isMobile ? "body1" : "h6"} color="error.main" fontWeight={600} sx={{ fontSize: { xs: '0.95rem', sm: '1.25rem' } }}>
                 ₹{transactions
                   .filter(t => t.type === 'debit')
                   .reduce((sum, t) => sum + t.amount, 0)
@@ -286,16 +291,16 @@ const Passbook: React.FC = () => {
             <Paper
               elevation={0}
               sx={{
-                p: 2,
+                p: { xs: 1.5, sm: 2 },
                 borderRadius: 2,
                 flex: 1,
-                minWidth: 150,
+                minWidth: { xs: '100px', sm: '150px' },
                 border: `1px solid ${theme.palette.primary.light}`,
                 backgroundColor: `${theme.palette.primary.main}08`
               }}
             >
-              <Typography variant="body2" color="textSecondary">Net Balance</Typography>
-              <Typography variant="h6" color="primary.main" fontWeight={600}>
+              <Typography variant="body2" color="textSecondary" sx={{ fontSize: { xs: '0.7rem', sm: '0.875rem' } }}>Net Balance</Typography>
+              <Typography variant={isMobile ? "body1" : "h6"} color="primary.main" fontWeight={600} sx={{ fontSize: { xs: '0.95rem', sm: '1.25rem' } }}>
                 ₹{(transactions
                   .filter(t => t.type === 'credit')
                   .reduce((sum, t) => sum + t.amount, 0) -
@@ -313,20 +318,22 @@ const Passbook: React.FC = () => {
           <Paper
             elevation={1}
             sx={{
-              borderRadius: 3,
+              borderRadius: { xs: 2, sm: 3 },
               overflow: 'hidden',
               boxShadow: theme.palette.mode === 'dark'
                 ? '0px 8px 32px rgba(0, 0, 0, 0.3)'
                 : '0px 8px 32px rgba(0, 0, 0, 0.08)',
             }}
           >
-            <TableContainer>
+            <TableContainer sx={{ overflowX: 'auto' }}>
               <Table 
                 sx={{ 
-                  minWidth: 650,
-                  tableLayout: 'fixed',
+                  minWidth: { xs: 300, sm: 650 },
+                  tableLayout: 'auto',
                   '& .MuiTableCell-root': {
                     borderBottom: `1px solid ${theme.palette.divider}`,
+                    padding: { xs: '8px 4px', sm: '16px 12px' },
+                    fontSize: { xs: '0.75rem', sm: '0.875rem' }
                   }
                 }}
               >
@@ -334,24 +341,22 @@ const Passbook: React.FC = () => {
                   <TableRow sx={{ backgroundColor: theme.palette.mode === 'dark' ? '#2a2a3e' : '#f5f5f5' }}>
                     <TableCell 
                       sx={{ 
-                        width: '120px',
-                        minWidth: '120px',
+                        width: { xs: '70px', sm: '120px' },
+                        minWidth: { xs: '70px', sm: '120px' },
                         fontWeight: 600,
-                        fontSize: '0.875rem',
-                        letterSpacing: '0.5px',
-                        padding: '16px 12px'
+                        fontSize: { xs: '0.7rem', sm: '0.875rem' },
+                        letterSpacing: '0.5px'
                       }}
                     >
                       Date
                     </TableCell>
                     <TableCell 
                       sx={{ 
-                        width: '45%',
-                        minWidth: '220px',
+                        width: { xs: '35%', sm: '45%' },
+                        minWidth: { xs: '120px', sm: '220px' },
                         fontWeight: 600,
-                        fontSize: '0.875rem',
-                        letterSpacing: '0.5px',
-                        padding: '16px 12px'
+                        fontSize: { xs: '0.7rem', sm: '0.875rem' },
+                        letterSpacing: '0.5px'
                       }}
                     >
                       Description
@@ -359,12 +364,11 @@ const Passbook: React.FC = () => {
                     <TableCell 
                       align="right" 
                       sx={{ 
-                        width: '130px',
-                        minWidth: '130px',
+                        width: { xs: '80px', sm: '130px' },
+                        minWidth: { xs: '80px', sm: '130px' },
                         fontWeight: 600,
-                        fontSize: '0.875rem',
-                        letterSpacing: '0.5px',
-                        padding: '16px 12px'
+                        fontSize: { xs: '0.7rem', sm: '0.875rem' },
+                        letterSpacing: '0.5px'
                       }}
                     >
                       Amount
@@ -372,12 +376,12 @@ const Passbook: React.FC = () => {
                     <TableCell 
                       align="right" 
                       sx={{ 
-                        width: '130px',
-                        minWidth: '130px',
+                        width: { xs: '80px', sm: '130px' },
+                        minWidth: { xs: '80px', sm: '130px' },
                         fontWeight: 600,
-                        fontSize: '0.875rem',
+                        fontSize: { xs: '0.7rem', sm: '0.875rem' },
                         letterSpacing: '0.5px',
-                        padding: '16px 12px'
+                        display: { xs: 'none', sm: 'table-cell' }
                       }}
                     >
                       Balance
@@ -385,14 +389,13 @@ const Passbook: React.FC = () => {
                     <TableCell 
                       onClick={handleTypeColumnClick}
                       sx={{ 
-                        width: '110px',
-                        minWidth: '110px',
+                        width: { xs: '70px', sm: '110px' },
+                        minWidth: { xs: '70px', sm: '110px' },
                         cursor: 'pointer',
                         userSelect: 'none',
                         fontWeight: 600,
-                        fontSize: '0.875rem',
+                        fontSize: { xs: '0.7rem', sm: '0.875rem' },
                         letterSpacing: '0.5px',
-                        padding: '16px 12px',
                         '&:hover': {
                           backgroundColor: theme.palette.primary.main + '15',
                         },
@@ -428,34 +431,34 @@ const Passbook: React.FC = () => {
                             }
                           }}
                         >
-                          <TableCell sx={{ padding: '12px', fontSize: '0.875rem' }}>
-                            <Typography variant="body2" fontWeight={400} sx={{ fontFamily: 'monospace' }}>
+                          <TableCell sx={{ fontSize: { xs: '0.7rem', sm: '0.875rem' } }}>
+                            <Typography variant="body2" fontWeight={400} sx={{ fontFamily: 'monospace', fontSize: { xs: '0.7rem', sm: '0.875rem' } }}>
                               {formatDate(transaction.date)}
                             </Typography>
                           </TableCell>
-                          <TableCell sx={{ padding: '12px' }}>
+                          <TableCell>
                             <Box>
-                              <Typography variant="body2" fontWeight={500} sx={{ fontSize: '0.875rem', mb: 0.5 }}>
+                              <Typography variant="body2" fontWeight={500} sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' }, mb: 0.5 }}>
                                 {transaction.source || transaction.category}
                               </Typography>
-                              {transaction.notes && (
-                                <Typography variant="caption" color="textSecondary" sx={{ fontSize: '0.75rem' }}>
+                              {transaction.notes && !isMobile && (
+                                <Typography variant="caption" color="textSecondary" sx={{ fontSize: { xs: '0.65rem', sm: '0.75rem' } }}>
                                   {transaction.notes}
                                 </Typography>
                               )}
                             </Box>
                           </TableCell>
-                          <TableCell align="right" sx={{ padding: '12px' }}>
+                          <TableCell align="right">
                             <Typography
                               variant="body2"
                               fontWeight={600}
                               color={transaction.type === 'credit' ? 'success.main' : 'error.main'}
-                              sx={{ fontFamily: 'monospace', fontSize: '0.875rem' }}
+                              sx={{ fontFamily: 'monospace', fontSize: { xs: '0.75rem', sm: '0.875rem' } }}
                             >
                               {transaction.type === 'credit' ? '+' : '-'}{formatAmount(transaction.amount)}
                             </Typography>
                           </TableCell>
-                          <TableCell align="right" sx={{ padding: '12px' }}>
+                          <TableCell align="right" sx={{ display: { xs: 'none', sm: 'table-cell' } }}>
                             <Typography 
                               variant="body2" 
                               fontWeight={500} 
@@ -464,17 +467,18 @@ const Passbook: React.FC = () => {
                               ₹{getRunningBalance(actualIndex).toLocaleString('en-IN')}
                             </Typography>
                           </TableCell>
-                          <TableCell sx={{ padding: '12px' }}>
+                          <TableCell>
                             <Chip
-                              icon={transaction.type === 'credit' ? <IncomeIcon /> : <ExpenseIcon />}
-                              label={transaction.type === 'credit' ? 'Income' : 'Expense'}
+                              icon={isMobile ? undefined : (transaction.type === 'credit' ? <IncomeIcon /> : <ExpenseIcon />)}
+                              label={isMobile ? (transaction.type === 'credit' ? 'In' : 'Out') : (transaction.type === 'credit' ? 'Income' : 'Expense')}
                               size="small"
                               color={transaction.type === 'credit' ? 'success' : 'error'}
                               variant="outlined"
                               sx={{ 
-                                fontSize: '0.75rem', 
+                                fontSize: { xs: '0.65rem', sm: '0.75rem' }, 
                                 fontWeight: 500,
-                                minWidth: '85px'
+                                minWidth: { xs: '45px', sm: '85px' },
+                                height: { xs: '20px', sm: '24px' }
                               }}
                             />
                           </TableCell>
@@ -495,16 +499,19 @@ const Passbook: React.FC = () => {
               display: 'flex', 
               justifyContent: 'space-between', 
               alignItems: 'center',
-              mt: 3,
-              px: 2
+              mt: { xs: 2, sm: 3 },
+              px: { xs: 0, sm: 2 },
+              flexDirection: { xs: 'column', sm: 'row' },
+              gap: { xs: 2, sm: 0 }
             }}>
               <Button
                 onClick={handlePreviousPage}
                 disabled={currentPage === 1}
                 startIcon={<ArrowBackIcon />}
                 variant="outlined"
+                size={isMobile ? "small" : "medium"}
                 sx={{ 
-                  minWidth: 120,
+                  minWidth: { xs: '100%', sm: 120 },
                   '&:disabled': {
                     opacity: 0.5
                   }
@@ -518,18 +525,18 @@ const Passbook: React.FC = () => {
                 alignItems: 'center', 
                 gap: 2,
                 backgroundColor: theme.palette.background.paper,
-                px: 3,
-                py: 1,
+                px: { xs: 2, sm: 3 },
+                py: { xs: 0.5, sm: 1 },
                 borderRadius: 2,
                 border: `1px solid ${theme.palette.divider}`
               }}>
-                <Typography variant="body2" color="text.secondary">
+                <Typography variant="body2" color="text.secondary" sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>
                   Page
                 </Typography>
-                <Typography variant="body1" fontWeight={600} color="primary.main">
+                <Typography variant="body1" fontWeight={600} color="primary.main" sx={{ fontSize: { xs: '0.9rem', sm: '1rem' } }}>
                   {currentPage}
                 </Typography>
-                <Typography variant="body2" color="text.secondary">
+                <Typography variant="body2" color="text.secondary" sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>
                   of {totalPages}
                 </Typography>
               </Box>
@@ -539,8 +546,9 @@ const Passbook: React.FC = () => {
                 disabled={currentPage === totalPages}
                 endIcon={<ArrowBackIcon sx={{ transform: 'rotate(180deg)' }} />}
                 variant="outlined"
+                size={isMobile ? "small" : "medium"}
                 sx={{ 
-                  minWidth: 120,
+                  minWidth: { xs: '100%', sm: 120 },
                   '&:disabled': {
                     opacity: 0.5
                   }

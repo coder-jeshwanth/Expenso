@@ -1,5 +1,6 @@
 import React from 'react';
 import { Container, Typography, Box, Button, useTheme, Paper } from '@mui/material';
+import useMediaQuery from '@mui/material/useMediaQuery';
 import { 
   TrendingUp as IncomeIcon, 
   TrendingDown as ExpenseIcon, 
@@ -9,6 +10,7 @@ import {
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { useTransactions } from '../context/TransactionContext';
+import { useLanguage } from '../context/LanguageContext';
 import SummaryCard from '../components/SummaryCard';
 import ExpensePieChart from '../components/ExpensePieChart';
 import ExpenseBarChart from '../components/ExpenseBarChart';
@@ -18,6 +20,8 @@ import RotatingQuotes from '../components/RotatingQuotes';
 
 const Dashboard: React.FC = () => {
   const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const { t } = useLanguage();
   const { 
     getTotalIncome, 
     getTotalExpenses, 
@@ -55,7 +59,7 @@ const Dashboard: React.FC = () => {
   };
 
   return (
-    <Container maxWidth="lg" sx={{ py: 4 }}>
+    <Container maxWidth="lg" sx={{ py: { xs: 2, sm: 4 }, px: { xs: 2, sm: 3 } }}>
       <motion.div
         variants={containerVariants}
         initial="hidden"
@@ -68,59 +72,63 @@ const Dashboard: React.FC = () => {
 
         {/* Header with buttons */}
         <motion.div variants={itemVariants}>
-          <Box sx={{ mb: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <Typography variant="h4" sx={{ fontWeight: 'bold' }}>
-              Dashboard
+          <Box sx={{ mb: { xs: 3, sm: 4 }, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexDirection: { xs: 'column', sm: 'row' }, gap: { xs: 2, sm: 0 } }}>
+            <Typography variant={isMobile ? "h5" : "h4"} sx={{ fontWeight: 'bold', display: { xs: 'none', sm: 'block' } }}>
+              {t('dashboard.title')}
             </Typography>
-            <Box sx={{ display: 'flex', gap: 2 }}>
+            <Box sx={{ display: 'flex', gap: { xs: 1, sm: 2 }, width: { xs: '100%', sm: 'auto' } }}>
               <Button 
                 component={Link} 
                 to="/add-credit" 
                 variant="outlined" 
                 color="primary"
-                startIcon={<AddIcon />}
+                startIcon={!isMobile && <AddIcon />}
+                size={isMobile ? "small" : "medium"}
+                sx={{ flex: { xs: 1, sm: 'none' } }}
               >
-                Add Income
+                {isMobile ? t('nav.addCredit').split(' ')[1] || 'Credit' : t('nav.addCredit')}
               </Button>
               <Button 
                 component={Link} 
                 to="/add-debit" 
                 variant="contained" 
                 color="primary"
-                startIcon={<AddIcon />}
+                startIcon={!isMobile && <AddIcon />}
+                size={isMobile ? "small" : "medium"}
+                sx={{ flex: { xs: 1, sm: 'none' } }}
               >
-                Add Expense
+                {isMobile ? t('nav.addExpense').split(' ')[1] || 'Expense' : t('nav.addExpense')}
               </Button>
             </Box>
           </Box>
         </motion.div>
 
         {/* Summary Cards */}
-        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 3, mb: 4 }}>
-          <Box sx={{ flex: '1 1 300px', minWidth: 0 }}>
+        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: { xs: 2, sm: 3 }, mb: { xs: 3, sm: 4 } }}>
+          <Box sx={{ flex: '1 1 300px', minWidth: { xs: '100%', sm: 0 } }}>
             <motion.div variants={itemVariants}>
               <SummaryCard 
-                title="Total Income" 
+                title={t('dashboard.totalIncome')} 
                 amount={income} 
                 icon={<IncomeIcon />} 
                 color={theme.palette.success.main} 
               />
             </motion.div>
           </Box>
-          <Box sx={{ flex: '1 1 300px', minWidth: 0 }}>
+          <Box sx={{ flex: '1 1 300px', minWidth: { xs: '100%', sm: 0 } }}>
             <motion.div variants={itemVariants}>
               <SummaryCard 
-                title="Total Expenses" 
+                title={t('dashboard.totalExpenses')} 
                 amount={expenses} 
                 icon={<ExpenseIcon />} 
                 color={theme.palette.error.main} 
               />
             </motion.div>
           </Box>
-          <Box sx={{ flex: '1 1 300px', minWidth: 0 }}>
+          <Box sx={{ flex: '1 1 300px', minWidth: { xs: '100%', sm: 0 } }}>
             <motion.div variants={itemVariants}>
               <SummaryCard 
-                title="Current Balance" 
+                title={t('dashboard.totalBalance')} 
                 amount={balance} 
                 icon={<BalanceIcon />} 
                 color={theme.palette.info.main} 
@@ -136,18 +144,18 @@ const Dashboard: React.FC = () => {
 
         {/* Analytics Section - Moved to Bottom */}
         <motion.div variants={itemVariants}>
-          <Typography variant="h5" sx={{ mb: 3, fontWeight: 600 }}>
+          <Typography variant={isMobile ? "h6" : "h5"} sx={{ mb: { xs: 2, sm: 3 }, fontWeight: 600 }}>
             Analytics
           </Typography>
         </motion.div>
 
-        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 3, mb: 3 }}>
-          <Box sx={{ flex: '1 1 400px', minWidth: 0 }}>
+        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: { xs: 2, sm: 3 }, mb: { xs: 2, sm: 3 } }}>
+          <Box sx={{ flex: '1 1 400px', minWidth: { xs: '100%', sm: 0 } }}>
             <motion.div variants={itemVariants}>
               <ExpensePieChart />
             </motion.div>
           </Box>
-          <Box sx={{ flex: '1 1 500px', minWidth: 0 }}>
+          <Box sx={{ flex: '1 1 500px', minWidth: { xs: '100%', sm: 0 } }}>
             <motion.div variants={itemVariants}>
               <ExpenseBarChart weeklyTrends={weeklyTrends} />
             </motion.div>
@@ -164,17 +172,17 @@ const Dashboard: React.FC = () => {
           <Paper 
             elevation={0} 
             sx={{ 
-              p: 3, 
-              borderRadius: 3, 
+              p: { xs: 2, sm: 3 }, 
+              borderRadius: { xs: 2, sm: 3 }, 
               border: `1px dashed ${theme.palette.divider}`,
               textAlign: 'center',
-              mt: 4
+              mt: { xs: 3, sm: 4 }
             }}
           >
-            <Typography variant="h6" sx={{ mb: 1, color: theme.palette.text.secondary }}>
+            <Typography variant="h6" sx={{ mb: 1, color: theme.palette.text.secondary, fontSize: { xs: '1rem', sm: '1.25rem' } }}>
               Looking for more insights?
             </Typography>
-            <Typography variant="body2" color="textSecondary" sx={{ mb: 3 }}>
+            <Typography variant="body2" color="textSecondary" sx={{ mb: { xs: 2, sm: 3 }, fontSize: { xs: '0.8rem', sm: '0.875rem' } }}>
               We're working on adding more detailed analytics and reporting features.
               Stay tuned for updates!
             </Typography>
@@ -183,6 +191,7 @@ const Dashboard: React.FC = () => {
               color="primary"
               component={Link}
               to="/settings"
+              size={isMobile ? "small" : "medium"}
             >
               Check Settings
             </Button>

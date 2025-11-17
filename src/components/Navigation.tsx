@@ -21,26 +21,26 @@ import {
   Add as AddIcon,
   Remove as RemoveIcon,
   AccountBalanceWallet as PassbookIcon,
-  Settings as SettingsIcon,
-  TrendingUp as GoalsIcon
+  Settings as SettingsIcon
 } from '@mui/icons-material';
 import { Link, useLocation } from 'react-router-dom';
 import { useThemeMode } from '../context/ThemeContext';
+import { useLanguage } from '../context/LanguageContext';
 
 const Navigation: React.FC = () => {
   const theme = useTheme();
   const { isDarkMode } = useThemeMode();
+  const { t } = useLanguage();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const [drawerOpen, setDrawerOpen] = useState(false);
   const location = useLocation();
   
   const navItems = [
-    { name: 'Dashboard', path: '/', icon: <DashboardIcon /> },
-    { name: 'Add Credit', path: '/add-credit', icon: <AddIcon /> },
-    { name: 'Add Expense', path: '/add-debit', icon: <RemoveIcon /> },
-    { name: 'Goals', path: '/goals', icon: <GoalsIcon /> },
-    { name: 'Passbook', path: '/passbook', icon: <PassbookIcon /> },
-    { name: 'Settings', path: '/settings', icon: <SettingsIcon /> }
+    { name: t('nav.dashboard'), path: '/', icon: <DashboardIcon /> },
+    { name: t('nav.addCredit'), path: '/add-credit', icon: <AddIcon /> },
+    { name: t('nav.addExpense'), path: '/add-debit', icon: <RemoveIcon /> },
+    { name: t('nav.passbook'), path: '/passbook', icon: <PassbookIcon /> },
+    { name: t('nav.settings'), path: '/settings', icon: <SettingsIcon /> }
   ];
   
   const toggleDrawer = (open: boolean) => (event: React.KeyboardEvent | React.MouseEvent) => {
